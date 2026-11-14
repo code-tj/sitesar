@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    container_name: sitesar-api
+    ports:
+      - "8080:8080"
+    environment:
+      DATA_DIR: /data
+      CATALOG_PATH: /catalog/complexes_dushanbe.geojson
+      # Внешний адрес API — для абсолютных ссылок на картинки (за nginx API сам не знает, что снаружи https)
+      PUBLIC_URL: ${PUBLIC_URL:-https://apex-api.code.tj}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    volumes:
+      # Результаты analyze_complexes.py: <repo>/../data (analytics/, static/)
+      - ${HONAINAV_DATA:-../../data}:/data:ro
+      # Каталог ЖК (названия, адреса, статус по реестру)
+      - ../geojson:/catalog:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
