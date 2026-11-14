@@ -1,0 +1,179 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "zhk-001",
+    "name": "Scandinavia Boulevard (Sebiston)",
+    "district": "Sino",
+    "address": "Panjrud St., microdistricts 91–92",
+    "description": "Blocks V (22 floors) and G (24 floors)",
+    "max_floors": 24,
+    "permit_decision": "67-2024",
+    "registry_status": "green",
+    "reported_status": "active",
+    "note": "Outline drawn by the user on 13 Nov; reported status based on the user's on-site check"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       68.7479439,
+       38.59092658144991
+      ],
+      [
+       68.74884213746691,
+       38.59092658144991
+      ],
+      [
+       68.74884213746691,
+       38.5892686
+      ],
+      [
+       68.7479439,
+       38.5892686
+      ],
+      [
+       68.7479439,
+       38.59092658144991
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "zhk-002",
+    "name": "Romashka",
+    "district": "Shohmansur",
+    "address": "Rudaki Ave., 31",
+    "description": "3 buildings, 25 floors each",
+    "max_floors": 25,
+    "permit_decision": "609-2023",
+    "registry_status": "green",
+    "reported_status": "completed",
+    "note": "Outline drawn by the user on 13 Nov; reported status based on the user's on-site check; 14 Nov: according to the user, the building is completed (was active)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       68.7899558148435,
+       38.567451771437874
+      ],
+      [
+       68.7904468,
+       38.5670094
+      ],
+      [
+       68.7919009,
+       38.5678539
+      ],
+      [
+       68.79238719714107,
+       38.56821583779086
+      ],
+      [
+       68.79177,
+       38.5685522
+      ],
+      [
+       68.7907554,
+       38.5679197
+      ],
+      [
+       68.7899558148435,
+       38.567451771437874
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "zhk-003",
+    "name": "Former Vakhsh Hotel site",
+    "district": "Shohmansur",
+    "address": "Rudaki Ave., 24",
+    "description": "Construction on hold; not listed in the residential projects registry",
+    "max_floors": null,
+    "permit_decision": null,
+    "registry_status": "none",
+    "reported_status": "stalled",
+    "note": "Outline = footprint of the former Vakhsh Hotel from OpenStreetMap (demolished), added at the user's request on 13 Nov"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       68.7941337,
+       38.5673024
+      ],
+      [
+       68.7942678,
+       38.5673821
+      ],
+      [
+       68.7942839,
+       38.5673653
+      ],
+      [
+       68.794654,
+       38.567617
+      ],
+      [
+       68.7951851,
+       38.567617
+      ],
+      [
+       68.7951851,
+       38.5676296
+      ],
+      [
+       68.7953085,
+       38.5676338
+      ],
+      [
+       68.7953085,
+       38.567445
+      ],
+      [
+       68.7947237,
+       38.567445
+      ],
+      [
+       68.7945038,
+       38.5673108
+      ],
+      [
+       68.7945199,
+       38.567294
+      ],
+      [
+       68.7944287,
+       38.5672395
+      ],
+      [
+       68.7945145,
+       38.5671598
+      ],
+      [
+       68.7943804,
+       38.5670759
+      ],
+      [
+       68.7941337,
+       38.5673024
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
