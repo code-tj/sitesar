@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apex Tajikistan :: Satellite Construction Verification</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --sunk:#F6F7F5;
+  --ink:#0B1220; --ink-2:#344054; --muted:#667085; --faint:#98A2B3; --line:#E6E8EC;
+  --acc:#2B59C3; --acc-700:#1F449C; --acc-50:#EEF3FC;
+  --idle:#6B7586; --idle-50:#F1F3F6;
+  --crane:#F2B705;
+  --r-lg:18px; --r-md:12px; --r-sm:8px;
+  --glass:rgba(255,255,255,.92);
+  --shadow:0 1px 2px rgba(11,18,32,.06),0 12px 32px rgba(11,18,32,.10);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Manrope,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01"}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px;border-radius:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.app{display:grid;grid-template-columns:432px 1fr;height:100vh;height:100dvh}
+
+/* ===== panel ===== */
+.panel{display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--line);min-height:0;z-index:2}
+.head{padding:22px 24px 0}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.logo{width:52px;height:52px;border-radius:14px;flex:0 0 auto;display:block;box-shadow:0 2px 8px rgba(11,18,32,.18)}
+.word{line-height:1}
+.word b{display:block;font-size:19px;font-weight:800;letter-spacing:-.01em}
+.word span{display:block;font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted);margin-top:4px}
+.m .k small{display:block;font-weight:600;color:var(--muted);font-size:10.5px;letter-spacing:0;text-transform:none;margin-top:1px}
+.why{margin:0 0 6px;padding-left:18px;color:var(--muted);font-size:13.5px;line-height:1.45}.why li{margin:3px 0}
+.demo-chip{font-size:11.5px;font-weight:700;color:var(--muted);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:5px 10px;white-space:nowrap}
+.tagline{margin:16px 0 0;font-size:15px;font-weight:600;color:var(--ink-2);line-height:1.45}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 0}
+.stat{background:var(--sunk);border-radius:var(--r-md);padding:10px 12px}
+.stat b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:2px}
+.stat.on b{color:var(--acc)} .stat.off b{color:var(--idle)}
+.search{margin:16px 0 0;position:relative;display:block}
+.search input{width:100%;height:46px;border:1px solid var(--line);border-radius:var(--r-md);padding:0 14px 0 42px;font-size:15px;background:var(--surface);transition:border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.search input::placeholder{color:var(--faint)}
+.search input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px var(--acc-50)}
+.search svg{position:absolute;left:14px;top:14px;pointer-events:none}
+.scroll{overflow:auto;flex:1;min-height:0;padding:8px 12px 16px}
+.seclab{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:14px 12px 8px}
+
+/* list rows */
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.row{width:100%;display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;text-align:left;background:none;border:1px solid transparent;border-radius:14px;padding:12px;min-height:72px;transition:background .15s var(--ease),border-color .15s var(--ease)}
+.row:hover{background:var(--sunk)}
+.row:active{background:var(--acc-50)}
+.dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 4px rgba(43,89,195,.14)}
+.dot.on{background:var(--acc);animation:pulse 2.2s var(--ease) infinite}
+.dot.off{background:var(--idle);box-shadow:0 0 0 4px rgba(107,117,134,.14)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(43,89,195,.16)}50%{box-shadow:0 0 0 7px rgba(43,89,195,.05)}}
+.row .t{font-weight:700;font-size:15.5px;line-height:1.25}
+.row .a{font-size:13px;color:var(--muted);margin-top:3px}
+.row .st{font-size:12px;font-weight:700;margin-top:6px}
+.row .st.on{color:var(--acc)} .row .st.off{color:var(--idle)}
+.spark{width:64px;height:28px}
+.chev{color:var(--faint)}
+.empty{padding:28px 12px;color:var(--muted);font-size:14px;line-height:1.5}
+.hint{display:flex;gap:10px;align-items:center;margin:14px 12px 0;padding:12px 14px;border-radius:var(--r-md);background:var(--acc-50);color:var(--acc-700);font-size:13.5px;font-weight:600;line-height:1.4}
+
+/* detail */
+.detail{padding:6px 12px 8px}
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font-weight:700;font-size:14px;padding:8px 10px 8px 4px;border-radius:10px;min-height:44px}
+.back:hover{color:var(--ink);background:var(--sunk)}
+.badge{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;padding:6px 11px;border-radius:999px;margin-top:6px}
+.badge.on{color:var(--acc);background:var(--acc-50)} .badge.off{color:var(--idle);background:var(--idle-50)}
+.badge i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.dname{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px;line-height:1.15;text-wrap:balance}
+.daddr{color:var(--muted);font-size:14px}
+.verdict{margin-top:18px;border-radius:var(--r-lg);padding:18px;display:flex;gap:14px;align-items:center}
+.verdict.on{background:linear-gradient(0deg,var(--acc-50),var(--acc-50))}
+.verdict.off{background:var(--idle-50)}
+.verdict .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto}
+.verdict.on .ic{background:var(--acc)} .verdict.off .ic{background:var(--idle)}
+.verdict .v{font-size:20px;font-weight:800;letter-spacing:-.01em}
+.verdict.on .v{color:var(--acc-700)} .verdict.off .v{color:#4A5363}
+.verdict .r{font-size:13.5px;color:var(--ink-2);margin-top:3px;line-height:1.4}
+.h{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:24px 0 10px}
+.h small{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
+.chart{height:190px;position:relative}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.m{background:var(--sunk);border-radius:var(--r-md);padding:12px}
+.m .k{font-size:12px;color:var(--muted);font-weight:700}
+.m .n{font-size:20px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.m .s{font-size:12px;color:var(--ink-2);margin-top:2px}
+.bar{height:5px;border-radius:3px;background:var(--line);margin-top:9px;overflow:hidden}.bar b{display:block;height:100%;border-radius:3px}
+.how{margin-top:20px;border-top:1px solid var(--line);padding-top:6px}
+.how summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none;min-height:44px;display:flex;align-items:center;justify-content:space-between;color:var(--ink-2)}
+.how summary::-webkit-details-marker{display:none}
+.how p{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 8px}
+.dock{border-top:1px solid var(--line);padding:12px 24px 16px;display:none;gap:10px;background:var(--surface)}
+.dock.show{display:flex}
+.btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:var(--r-md);font-weight:800;font-size:14.5px;text-decoration:none;border:0;transition:transform .12s var(--ease),filter .15s var(--ease)}
+.btn:active{transform:scale(.98)}
+.btn.pri{background:var(--acc);color:#fff}.btn.pri:hover{filter:brightness(1.06)}
+.btn.sec{background:var(--sunk);color:var(--ink);border:1px solid var(--line)}.btn.sec:hover{background:#ECEEF1}
+.foot{padding:10px 24px 14px;font-size:11.5px;color:var(--faint);line-height:1.5}
+
+/* ===== map overlays (unified glass controls) ===== */
+.mapwrap{position:relative;min-height:0}
+#map{position:absolute;inset:0}
+.ctl{position:absolute;z-index:5;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7);border-radius:14px;box-shadow:var(--shadow)}
+.seg{top:16px;right:16px;display:flex;padding:4px;gap:2px}
+.seg button{border:0;background:none;font-weight:800;font-size:13px;padding:0 14px;height:38px;border-radius:10px;color:var(--muted);transition:background .15s var(--ease),color .15s var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+#tourBtn[aria-pressed="true"]{background:var(--acc);color:#fff}
+.tl .lab.tour{color:var(--acc);font-weight:800}
+.legend{left:16px;top:16px;padding:10px 14px;display:flex;gap:16px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.timeline{left:50%;transform:translateX(-50%);bottom:22px;width:min(600px,calc(100% - 380px));padding:12px 16px 10px;display:flex;align-items:center;gap:14px}
+.play{width:46px;height:46px;border-radius:50%;border:0;background:var(--acc);display:grid;place-items:center;flex:0 0 auto;box-shadow:0 6px 16px rgba(43,89,195,.35);transition:transform .12s var(--ease)}
+.play:hover{transform:scale(1.05)} .play:active{transform:scale(.96)}
+.tl{flex:1;min-width:0}
+.tl .top{display:flex;justify-content:space-between;align-items:baseline}
+.tl .lab{font-size:12px;font-weight:800;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.tl .date{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.tl .date em{font-style:normal;color:var(--faint);font-weight:700}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:4px 0 0}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--acc) var(--p,100%),var(--line) var(--p,100%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--acc);margin-top:-7px;box-shadow:0 2px 6px rgba(11,18,32,.25)}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--acc)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--acc)}
+.passes{display:flex;justify-content:space-between;padding:0 7px}
+.passes i{width:4px;height:4px;border-radius:50%;background:#C9CED6}
+.passes i.done{background:var(--acc)}
+.tag.active{box-shadow:0 6px 20px rgba(11,18,32,.32)}   /* without transform — MapLibre positions it */
+.tag{font:800 12.5px Manrope,sans-serif;background:#fff;border-radius:10px;padding:6px 10px;box-shadow:0 4px 14px rgba(11,18,32,.18);white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:7px;color:var(--ink)}
+.tag i{width:8px;height:8px;border-radius:50%}
+.maplibregl-ctrl-attrib{font-size:11px}
+.maplibregl-ctrl-group{border-radius:12px!important;box-shadow:var(--shadow)!important}
+
+/* ===== responsive ===== */
+@media (max-width:1100px){.timeline{width:calc(100% - 32px);left:16px;transform:none;bottom:70px}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-rows:52vh 1fr}
+  .mapwrap{order:-1}
+  .panel{border-right:0;border-radius:22px 22px 0 0;margin-top:-20px;box-shadow:0 -8px 28px rgba(11,18,32,.10)}
+  .panel:before{content:"";width:40px;height:4px;border-radius:2px;background:var(--line);margin:10px auto 0;display:block}
+  .head{padding:12px 18px 0}.tagline{display:none}
+  .legend{display:none}
+  .timeline{bottom:30px;padding:8px 10px;gap:10px}.tl .lab,.passes{display:none}.play{width:40px;height:40px}.tl .date{font-size:15px}
+  .maplibregl-ctrl-bottom-right{display:none}
+  .dock{padding:10px 18px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel" aria-label="Sites">
+    <header class="head">
+      <div class="brandrow">
+        <a class="brand" href="#" onclick="go('');return false;" aria-label="Apex Tajikistan — Home">
+          <img class="logo" src="data:image/png;base64,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" alt="" width="52" height="52"><span class="word"><b>Apex Tajikistan</b><span>Radar Construction Monitoring</span></span>
+        </a>
+        <span class="demo-chip" id="demo-chip" title="Values are illustrative prior to scene processing">Demo Data</span>
+      </div>
+      <p class="tagline">Satellite radar verifies whether your building is actively rising and if the ground beneath remains stable.</p>
+      <div class="stats" id="stats"></div>
+      <label class="search"><span class="sr">Search site</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Complex, street, or district" autocomplete="off"></label>
+    </header>
+    <div class="scroll" id="view" aria-live="polite"></div>
+    <div class="dock" id="dock">
+      <a class="btn pri" id="bot" href="https://t.me/" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21.5 3.5L2.8 10.7c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8l3.2-15c.3-1.3-.5-1.9-1.3-1.6zM9.6 14.3l8.3-7.6-6.6 8.6-.3 3-1.4-4z"/></svg>Track in Telegram</a>
+      <button class="btn sec" id="share">Share</button>
+    </div>
+    <div class="foot" id="foot">NASA–ISRO NISAR imagery · every 12 days · © OpenStreetMap, OpenFreeMap</div>
+  </aside>
+  <main class="mapwrap">
+    <div id="map" role="region" aria-label="3D Map of Dushanbe"></div>
+    <div class="ctl legend" aria-hidden="true"><span><i style="background:var(--acc)"></i>Under Construction</span><span><i style="background:#2F8F5B"></i>Completed</span><span><i style="background:#A47E55"></i>Construction Paused</span><span><i style="background:var(--crane)"></i>Crane Active</span></div>
+    <div class="ctl seg" role="group" aria-label="Map view"><button id="tourBtn" aria-pressed="false" title="Automated aerial flyover"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="margin-right:6px;vertical-align:-1px"><path d="M7 4l13 8-13 8z"/></svg>Tour</button><button id="v3d" aria-pressed="true">3D</button><button id="v2d" aria-pressed="false">2D</button></div>
+    <div class="ctl timeline" role="group" aria-label="Passes timeline">
+      <button class="play" id="play" aria-label="Show progress across passes"><svg id="pi" width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M7 4l13 8-13 8z"/></svg></button>
+      <div class="tl"><div class="top"><span class="lab" id="tlab">Satellite pass</span><span class="date" id="dt">06.11<em>.2026</em></span></div>
+        <input type="range" id="rng" min="0" max="10" step="1" value="10" aria-label="Pass date">
+        <div class="passes" id="passes" aria-hidden="true"></div></div>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script>
+Chart.defaults.font.family='Manrope,"Segoe UI",Arial,sans-serif';
+const GEO={"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"id": "zhk-001", "name": "RC «Scandinavia Boulevard» (Sebiston)", "district": "Sino", "floors": "Panjrud St, 91–92 microdistrict · blocks B 22 fl., D 24 fl.", "decision": "67-2024", "registry_status": "green", "truth": "active", "marker": [68.748303, 38.590263], "note": "outline drawn by user 13.11; truth from user check"}, "geometry": {"type": "Polygon", "coordinates": [[[68.7479439, 38.59092658144991], [68.74884213746691, 38.59092658144991], [68.74884213746691, 38.5892686], [68.7479439, 38.5892686], [68.7479439, 38.59092658144991]]]}}, {"type": "Feature", "properties": {"id": "zhk-002", "name": "RC «Romashka»", "district": "Shohmansur", "floors": "Rudaki Ave, 31 · 3 buildings of 25 fl.", "decision": "609-2023", "registry_status": "green", "truth": "active", "marker": [68.791025, 38.567779], "note": "outline drawn by user 13.11; truth from user check"}, "geometry": {"type": "Polygon", "coordinates": [[[68.7899558148435, 38.567451771437874], [68.7904468, 38.5670094], [68.7919009, 38.5678539], [68.79238719714107, 38.56821583779086], [68.79177, 38.5685522], [68.7907554, 38.5679197], [68.7899558148435, 38.567451771437874]]]}}, {"type": "Feature", "properties": {"id": "zhk-003", "name": "Construction Paused (Former Vakhsh Hotel)", "district": "Shohmansur", "floors": "Rudaki Ave, 24 · not in residential project registry", "decision": "", "registry_status": "none", "truth": "stalled", "marker": [68.794635, 38.567388], "note": "outline = former Vakhsh hotel from OpenStreetMap (demolished), user request 13.11"}, "geometry": {"type": "Polygon", "coordinates": [[[68.7941337, 38.5673024], [68.7942678, 38.5673821], [68.7942839, 38.5673653], [68.794654, 38.567617], [68.7951851, 38.567617], [68.7951851, 38.5676296], [68.7953085, 38.5676338], [68.7953085, 38.567445], [68.7947237, 38.567445], [68.7945038, 38.5673108], [68.7945199, 38.567294], [68.7944287, 38.5672395], [68.7945145, 38.5671598], [68.7943804, 38.5670759], [68.7941337, 38.5673024]]]}}]};
+const KEEP={"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78353357315063, 38.56493678997737], [68.78349602222443, 38.56503745670287], [68.78402173519135, 38.56515070660049], [68.78405392169952, 38.56505004003364], [68.78353357315063, 38.56493678997737]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78845274448395, 38.56486967874869], [68.78865659236908, 38.56494517887654], [68.78861367702484, 38.56501648448], [68.78900527954102, 38.56515909547471], [68.78895699977875, 38.56524298416292], [68.78933787345886, 38.565381400284366], [68.78928422927856, 38.56546948313192], [68.78967583179474, 38.56561209322763], [68.78967583179474, 38.56561628763794], [68.78985285758972, 38.56561628763794], [68.78983676433563, 38.56561209322763], [68.7898850440979, 38.56553659380046], [68.78942906856537, 38.5653688170116], [68.78946661949158, 38.565310095042975], [68.7890374660492, 38.565154901037715], [68.78908038139343, 38.56507940113022], [68.78866732120514, 38.564928401077196], [68.78871560096741, 38.56484870647688], [68.78850638866425, 38.5647774007069], [68.78845274448395, 38.56486967874869]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78965973854065, 38.56494937332576], [68.78980457782745, 38.565041651146714], [68.79002451896667, 38.56482773419893], [68.79062533378601, 38.565209428699376], [68.79041075706482, 38.56541495566756], [68.79055559635162, 38.565507232890695], [68.79087746143341, 38.56520103983104], [68.7899923324585, 38.56463478895478], [68.78965973854065, 38.56494937332576]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7913978099823, 38.56561628763794], [68.79104912281036, 38.56537720586036], [68.79083454608917, 38.5655827323487], [68.79076480865479, 38.56553659380046], [68.79068434238434, 38.56561628763794], [68.7913978099823, 38.56561628763794]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79420340061188, 38.565096178894294], [68.79469156265259, 38.56541915008938], [68.7946218252182, 38.565482066387034], [68.79457890987396, 38.56545689987459], [68.79448235034943, 38.5655449826296], [68.79458963871002, 38.56561628763794], [68.79479348659515, 38.56561628763794], [68.7947130203247, 38.56556176028499], [68.79479348659515, 38.56549464963996], [68.79483640193939, 38.56552401055487], [68.79495441913605, 38.56541495566756], [68.79490613937378, 38.565381400284366], [68.79499733448029, 38.565301706186375], [68.79513144493103, 38.565389789131615], [68.79538893699646, 38.565154901037715], [68.79529774188995, 38.56509198445363], [68.79513144493103, 38.56523878973084], [68.79494905471802, 38.56511715109389], [68.79485249519348, 38.565205234265335], [68.79489004611969, 38.565234595298506], [68.79481494426727, 38.565301706186375], [68.79433214664459, 38.564978734463466], [68.79420340061188, 38.565096178894294]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79626870155334, 38.56561628763794], [68.7965852022171, 38.56530590061479], [68.79645645618439, 38.56522201200002], [68.7960433959961, 38.56561628763794], [68.79626870155334, 38.56561628763794]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.77831935882568, 38.576453826167096], [68.77831935882568, 38.57663835214157], [68.77842128276825, 38.57663835214157], [68.77842128276825, 38.57668028979694], [68.77849638462067, 38.57668028979694], [68.77849102020264, 38.57672222742784], [68.77845883369446, 38.57672222742784], [68.77845883369446, 38.576860621436026], [68.77861440181732, 38.576860621436026], [68.7786465883255, 38.57688578395434], [68.77868950366974, 38.57690255896162], [68.77873241901398, 38.57691094646381], [68.77877533435822, 38.57690255896162], [68.77881824970245, 38.576889977706514], [68.77885043621063, 38.57686481518968], [68.7790060043335, 38.57686481518968], [68.7790060043335, 38.57673061495109], [68.77896308898926, 38.57673061495109], [68.77896308898926, 38.57668448356114], [68.7790435552597, 38.57668448356114], [68.7790435552597, 38.57664673967463], [68.77914011478424, 38.57664673967463], [68.77914547920227, 38.57644543861156], [68.77919912338257, 38.57642866349752], [68.77923667430878, 38.57639511325763], [68.7792581319809, 38.576348981652245], [68.7792581319809, 38.57630704380347], [68.77923667430878, 38.57626510593019], [68.77919375896454, 38.57623155561396], [68.77914547920227, 38.576210586658334], [68.77914547920227, 38.57600089676555], [68.77903819084167, 38.57600089676555], [68.77903819084167, 38.57595895871356], [68.7789899110794, 38.57595895871356], [68.77899527549744, 38.57576184954115], [68.7788450717926, 38.57576184954115], [68.77882897853851, 38.57573668662914], [68.77879679203033, 38.57571152370832], [68.77875924110413, 38.57569894224463], [68.77871632575989, 38.575694748422904], [68.77867341041565, 38.57570732988734], [68.77864122390747, 38.575728298989844], [68.77861976623535, 38.57576604335898], [68.77845346927643, 38.57576604335898], [68.77845346927643, 38.57589605158964], [68.77849638462067, 38.57589605158964], [68.77849638462067, 38.57596315251985], [68.77842128276825, 38.57596315251985], [68.77842128276825, 38.576005090569396], [68.77832472324371, 38.576005090569396], [68.77832472324371, 38.57620219907437], [68.77827107906342, 38.5762189742413], [68.77822816371918, 38.576252524563444], [68.77820670604706, 38.576294462444054], [68.77820670604706, 38.57634059408443], [68.77822816371918, 38.57638253191365], [68.77826571464539, 38.5764160821594], [68.77832472324371, 38.57643285727639], [68.77831935882568, 38.576453826167096]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78285229206085, 38.57142950498624], [68.78276109695435, 38.571320459061525], [68.78265917301178, 38.571374982044574], [68.7825733423233, 38.57127432419736], [68.78281474113464, 38.57114430760265], [68.78272354602814, 38.57103945533879], [68.78235876560211, 38.571236577468284], [68.78263235092163, 38.571551132937856], [68.78285229206085, 38.57142950498624]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78640353679657, 38.57337972146044], [68.78665030002594, 38.57339230333034], [68.78723502159119, 38.5728722508712], [68.78673076629639, 38.57253673115781], [68.78652155399323, 38.57253253715149], [68.7859582901001, 38.57282611700356], [68.78640353679657, 38.57337972146044]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78921449184418, 38.57255770118579], [68.78917157649994, 38.57255770118579], [68.78917157649994, 38.57253253715149], [68.78918766975403, 38.57253253715149], [68.78918766975403, 38.57250737310832], [68.78920376300812, 38.57250737310832], [68.78920376300812, 38.572423492900896], [68.7892198562622, 38.572423492900896], [68.7892198562622, 38.57233541857764], [68.78909647464752, 38.57233541857764], [68.78909647464752, 38.57235219464752], [68.78897845745087, 38.57235219464752], [68.78894627094269, 38.57241929888792], [68.78904819488525, 38.57241929888792], [68.78904283046722, 38.57246962702709], [68.78902673721313, 38.57246962702709], [68.78902673721313, 38.57256189519066], [68.78899455070496, 38.57256189519066], [68.78899455070496, 38.57264158123658], [68.78909647464752, 38.57264158123658], [68.78909647464752, 38.57262899923521], [68.78913938999176, 38.57262899923521], [68.78913938999176, 38.57263738723637], [68.78921449184418, 38.57263738723637], [68.78921449184418, 38.57255770118579]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78862977027893, 38.57238574677558], [68.78856539726257, 38.57244865697342], [68.78861904144287, 38.57248640306565], [68.78862977027893, 38.5724822090564], [68.78866195678711, 38.572503179100295], [68.78865122795105, 38.57251156711612], [68.7887316942215, 38.57256608919528], [68.78879606723785, 38.57250737310832], [68.7887692451477, 38.57248640306565], [68.78884971141815, 38.57241510487475], [68.78883361816406, 38.57240671684767], [68.7888765335083, 38.57236897071351], [68.78894627094269, 38.57241929888792], [68.78897845745087, 38.57235219464752], [68.78889262676239, 38.572293478385774], [68.78890335559845, 38.57228089632346], [68.78881216049194, 38.57221798597874], [68.78873705863953, 38.57228509034445], [68.78875315189362, 38.572293478385774], [68.78868341445923, 38.57235638866439], [68.78869950771332, 38.572364776697384], [68.78867268562317, 38.57238574677558], [68.78868877887726, 38.57239413480514], [68.78866732120514, 38.572410910861294], [68.78862977027893, 38.57238574677558]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79006743431091, 38.57153435668093], [68.79027664661407, 38.57164340228104], [68.79037857055664, 38.571538550745515], [68.79033029079437, 38.57151338635421], [68.79038393497467, 38.57144628126767], [68.79059851169586, 38.57158049137806], [68.79079699516296, 38.57137078797044], [68.79070043563843, 38.571316264984176], [68.79063069820404, 38.571391758338734], [68.79046976566315, 38.57128271235669], [68.79056096076965, 38.57119044255032], [68.79065752029419, 38.571106560805276], [68.79071652889252, 38.57114430760265], [68.79081308841705, 38.57105203761853], [68.79050195217133, 38.570842332668434], [68.7899923324585, 38.57130787682877], [68.7899762392044, 38.57135820574649], [68.7899762392044, 38.571400146484336], [68.78999769687653, 38.571433699056996], [68.79003524780273, 38.5714630575452], [68.79001379013062, 38.57148822195413], [68.7900298833847, 38.571509192288175], [68.79006743431091, 38.57153435668093]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79067361354828, 38.56562887086733], [68.79095256328583, 38.56581342464568], [68.790984749794, 38.56578406384901], [68.79122614860535, 38.56593925649548], [68.79119396209717, 38.565972811618224], [68.79147827625275, 38.566161558891736], [68.79156947135925, 38.56607767127585], [68.79149436950684, 38.566018949886455], [68.79145681858063, 38.56604411620205], [68.79142463207245, 38.56601475549965], [68.79166603088379, 38.56580084144858], [68.79104912281036, 38.56537720586036], [68.79083454608917, 38.5655827323487], [68.79076480865479, 38.56553659380046], [68.79067361354828, 38.56562887086733]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7915587425232, 38.568648782205656], [68.79168212413788, 38.568527149340866], [68.79147291183472, 38.568397127774944], [68.79134953022003, 38.56851456661897], [68.7915587425232, 38.568648782205656]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79184305667877, 38.569437293714486], [68.79205226898193, 38.56956731339818], [68.79213273525238, 38.56949181812661], [68.79218637943268, 38.56952537159046], [68.7926584482193, 38.56907239850679], [68.79262089729309, 38.56904723325175], [68.79270136356354, 38.56896754321929], [68.79248678684235, 38.56883332822801], [68.79238486289978, 38.568929795278336], [68.79252433776855, 38.56901367956465], [68.79209518432617, 38.56942051696399], [68.7919557094574, 38.56933243895949], [68.79184305667877, 38.569437293714486]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7926584482193, 38.568673947600246], [68.79278182983398, 38.56875783218524], [68.79306614398956, 38.56849778965301], [68.79304468631744, 38.56848520692594], [68.79307687282562, 38.568455847220946], [68.7931090593338, 38.56847681844005], [68.79308223724365, 38.56850617813646], [68.7931627035141, 38.56856070325517], [68.79314124584198, 38.56857748020644], [68.79331290721893, 38.56869491875568], [68.79333972930908, 38.568673947600246], [68.7934148311615, 38.56872427836299], [68.7934148311615, 38.56877041486456], [68.7933611869812, 38.56877041486456], [68.7933611869812, 38.56903465062092], [68.79355430603027, 38.56903045641016], [68.79354894161224, 38.568644587972386], [68.79305005073547, 38.56831324276885], [68.7926584482193, 38.568673947600246]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79149436950684, 38.5683300197779], [68.79162311553955, 38.56840551627019], [68.79160702228546, 38.5684222932577], [68.79171967506409, 38.5684935954109], [68.79174649715424, 38.568464235709314], [68.7918108701706, 38.568464235709314], [68.79183232784271, 38.56848520692594], [68.79212737083435, 38.56822096914905], [68.79208981990814, 38.56819999785529], [68.79208981990814, 38.56815805524943], [68.79211664199829, 38.568128695410735], [68.79201471805573, 38.56806158716299], [68.79199862480164, 38.568074169964234], [68.79187524318695, 38.56798189603742], [68.79180014133453, 38.56805739289544], [68.79196643829346, 38.56815386098748], [68.79196107387543, 38.56820838637353], [68.79180014133453, 38.56835518528413], [68.79174649715424, 38.56836357378427], [68.79158020019531, 38.56825032895003], [68.79149436950684, 38.5683300197779]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79142463207245, 38.5667194090465], [68.79120469093323, 38.56693332036318], [68.79138708114624, 38.5670507615996], [68.79144072532654, 38.56700042966466], [68.79135489463806, 38.56694590336198], [68.79144072532654, 38.566857822324124], [68.79161775112152, 38.566971069352974], [68.79151046276093, 38.56707592755387], [68.79168212413788, 38.56718917423896], [68.79178404808044, 38.56709270485183], [68.79191279411316, 38.56717239696357], [68.79188060760498, 38.567201757192976], [68.79196107387543, 38.56725208898692], [68.7919932603836, 38.56722272877806], [68.79201471805573, 38.56723531172619], [68.7919932603836, 38.567256283301475], [68.79205226898193, 38.567294032121595], [68.79211664199829, 38.56722692309435], [68.79203617572784, 38.56717239696357], [68.79207372665405, 38.56713464807956], [68.79142463207245, 38.5667194090465]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7918484210968, 38.566413221151834], [68.79197716712952, 38.56629997324387], [68.79250288009644, 38.56667327122804], [68.79240095615387, 38.566761352492136], [68.79254043102264, 38.56686621099905], [68.79276037216187, 38.56667746557642], [68.79198253154755, 38.56612800385713], [68.7917411327362, 38.566337722566345], [68.7918484210968, 38.566413221151834]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.795485496521, 38.56611542071511], [68.79564106464386, 38.56621189141427], [68.7957912683487, 38.566065088125015], [68.79611313343048, 38.56627061264598], [68.79625797271729, 38.56612800385713], [68.79595220088959, 38.56593086771238], [68.79609167575836, 38.56579664704904], [68.79592537879944, 38.565691786981375], [68.795485496521, 38.56611542071511]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79602193832397, 38.56563725968573], [68.79615604877472, 38.565721147815765], [68.7965852022171, 38.56530590061479], [68.79645645618439, 38.56522201200002], [68.79602193832397, 38.56563725968573]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7953782081604, 38.57064940357378], [68.79580736160278, 38.5706452094573], [68.79634380340576, 38.570133525406476], [68.79640281200409, 38.570133525406476], [68.79664421081543, 38.57028032038397], [68.7967300415039, 38.57019224343347], [68.7967300415039, 38.57015869028106], [68.79642963409424, 38.569974147662776], [68.79629015922546, 38.56998253597388], [68.7957376241684, 38.570523579972075], [68.7953782081604, 38.570523579972075], [68.7953782081604, 38.57064940357378]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7961345911026, 38.57094718522001], [68.79626870155334, 38.57103106715107], [68.7967300415039, 38.57058649180047], [68.7967300415039, 38.570565521197125], [68.79661202430725, 38.5704900269744], [68.7961345911026, 38.57094718522001]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79396200180054, 38.571605655745856], [68.79396200180054, 38.57212152334316], [68.79421412944794, 38.57212152334316], [68.79421412944794, 38.57199989635717], [68.79414439201355, 38.57199989635717], [68.79414439201355, 38.57173986555853], [68.79421949386597, 38.57173986555853], [68.79421949386597, 38.571605655745856], [68.79396200180054, 38.571605655745856]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7943160533905, 38.57102267896238], [68.79457890987396, 38.570775226955135], [68.79444479942322, 38.57068715061135], [68.79418194293976, 38.57093460292191], [68.7943160533905, 38.57102267896238]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79395127296448, 38.57096815571194], [68.79412829875946, 38.57096815571194], [68.79412829875946, 38.5706452094573], [68.79468619823456, 38.5706452094573], [68.79468083381653, 38.570464862215886], [68.79395127296448, 38.570464862215886], [68.79395127296448, 38.57096815571194]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79482567310333, 38.5704606680886], [68.79482567310333, 38.570661985921845], [68.7952709197998, 38.570661985921845], [68.7952709197998, 38.5704606680886], [68.79482567310333, 38.5704606680886]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.792964220047, 38.570133525406476], [68.79296958446503, 38.57026354383029], [68.79336655139923, 38.57026354383029], [68.79336655139923, 38.570301291070564], [68.79355430603027, 38.57029709693373], [68.79355430603027, 38.57025934969124], [68.79360258579254, 38.57025934969124], [68.79360258579254, 38.570133525406476], [68.79354894161224, 38.570133525406476], [68.79354357719421, 38.56967216781044], [68.79359722137451, 38.56967216781044], [68.79359722137451, 38.56958828429288], [68.7935596704483, 38.56958828429288], [68.7935596704483, 38.5695044006774], [68.7932699918747, 38.5695044006774], [68.7932699918747, 38.56952537159046], [68.7931627035141, 38.56952537159046], [68.7931627035141, 38.569655391114765], [68.79335045814514, 38.569655391114765], [68.79335582256317, 38.570129331259864], [68.792964220047, 38.570133525406476]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79155337810516, 38.5698692936912], [68.79146754741669, 38.56995737103762], [68.79151046276093, 38.56998253597388], [68.79147291183472, 38.5700202833618], [68.79160702228546, 38.57010416637499], [68.79192352294922, 38.56979799290315], [68.79207909107208, 38.569898652818665], [68.79216492176056, 38.56981476956554], [68.79172503948212, 38.569542148316486], [68.79162847995758, 38.56963442023965], [68.79176259040833, 38.569718303703354], [68.79158556461334, 38.56989026449776], [68.79155337810516, 38.5698692936912]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7940639257431, 38.57483081592687], [68.79424095153809, 38.574835009799074], [68.79423558712006, 38.57457918314901], [68.79425704479218, 38.574478529791065], [68.79443407058716, 38.57426044703172], [68.7942785024643, 38.57418495669154], [68.79410147666931, 38.574424009163295], [68.79406929016113, 38.57441562137072], [68.7940263748169, 38.57455821371107], [68.7940639257431, 38.57456660148699], [68.7940639257431, 38.57483081592687]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79495441913605, 38.574751132309274], [68.79506707191467, 38.574642091426114], [68.79472374916077, 38.574432396954876], [68.79461109638214, 38.57454563204536], [68.79495441913605, 38.574751132309274]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7940639257431, 38.57533407883841], [68.79426777362823, 38.5753256911521], [68.7942624092102, 38.57517051877889], [68.79452526569366, 38.57517051877889], [68.79480957984924, 38.57489791785213], [68.79464328289032, 38.57479726494077], [68.79439651966095, 38.575032121514596], [68.7940639257431, 38.57504889695474], [68.7940639257431, 38.57533407883841]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79466474056244, 38.5757912062607], [68.79465937614441, 38.575531189184574], [68.79458963871002, 38.57553538301582], [68.79458963871002, 38.575472475520996], [68.7945306301117, 38.575472475520996], [68.79448771476746, 38.575434730997614], [68.79442870616913, 38.575430537160486], [68.79438042640686, 38.57544311867122], [68.79437506198883, 38.575480863190165], [68.79431068897247, 38.575480863190165], [68.7943160533905, 38.57553538301582], [68.79410147666931, 38.57553538301582], [68.79410147666931, 38.57561506576354], [68.79406929016113, 38.57561506576354], [68.79407465457916, 38.57573668662914], [68.79410684108734, 38.57573668662914], [68.79410684108734, 38.57580798152361], [68.79430532455444, 38.57581217533871], [68.79431068897247, 38.575854113476424], [68.79439115524292, 38.57584991966374], [68.79439115524292, 38.57587927634728], [68.79447162151337, 38.57588347015823], [68.79454135894775, 38.5758750825361], [68.79454135894775, 38.57584991966374], [68.79460036754608, 38.57584991966374], [68.79460036754608, 38.57580798152361], [68.79466474056244, 38.5757912062607]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79278719425201, 38.57407591494902], [68.79314124584198, 38.57434013119362], [68.79324853420258, 38.574482723683786], [68.79329681396484, 38.57462112200653], [68.79333436489105, 38.57519148803809], [68.79347920417786, 38.57518729418675], [68.7934684753418, 38.574751132309274], [68.79344701766968, 38.57460434646646], [68.7933611869812, 38.574390457987164], [68.79320025444031, 38.57420592623842], [68.79287302494049, 38.57398784265152], [68.79278719425201, 38.57407591494902]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78904283046722, 38.57813551127282], [68.78904283046722, 38.57837455059814], [68.78879070281982, 38.57837035693262], [68.78879070281982, 38.578491973133254], [68.78921449184418, 38.578496166791666], [68.7892198562622, 38.57813970495204], [68.78904283046722, 38.57813551127282]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78552913665771, 38.57886101413678], [68.78544867038727, 38.57924263408947], [68.78578662872314, 38.57928457022436], [68.78587245941162, 38.57889036958974], [68.78574907779694, 38.578873595046645], [68.785759806633, 38.57880649683517], [68.78566861152649, 38.5787981095543], [68.7856525182724, 38.578877788682775], [68.78552913665771, 38.57886101413678]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78612995147705, 38.580492320402385], [68.78612995147705, 38.580563610576746], [68.7861567735672, 38.580563610576746], [68.7861567735672, 38.5807397389394], [68.78611922264099, 38.58078586772493], [68.7859046459198, 38.58078586772493], [68.7859046459198, 38.58076490009881], [68.78575444221497, 38.58076490009881], [68.78575444221497, 38.58078586772493], [68.78532528877258, 38.58078586772493], [68.78532528877258, 38.5807397389394], [68.7852394580841, 38.5807397389394], [68.78522872924805, 38.58093264093628], [68.78626942634583, 38.580941027967896], [68.78640353679657, 38.580819415913965], [68.78640353679657, 38.580492320402385], [68.78612995147705, 38.580492320402385]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79411220550537, 38.58119683196091], [68.79407465457916, 38.57999328720058], [68.79394590854645, 38.57999328720058], [68.79398345947266, 38.58119683196091], [68.79411220550537, 38.58119683196091]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79395663738251, 38.58238358282989], [68.79414975643158, 38.58238358282989], [68.79414975643158, 38.58216552407012], [68.79453599452972, 38.58216971751406], [68.79453599452972, 38.58205649444196], [68.79413902759552, 38.58205649444196], [68.79413902759552, 38.581855208539736], [68.79396200180054, 38.581855208539736], [68.79396200180054, 38.58194327119139], [68.7940263748169, 38.58194327119139], [68.7940263748169, 38.582069074792116], [68.79394590854645, 38.58206488134229], [68.79394590854645, 38.58218649128733], [68.79402101039886, 38.58218649128733], [68.79402101039886, 38.58229971415449], [68.79395663738251, 38.58229971415449], [68.79395663738251, 38.58238358282989]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79420340061188, 38.565096178894294], [68.79469156265259, 38.56541915008938], [68.7946218252182, 38.565482066387034], [68.79457890987396, 38.56545689987459], [68.79448235034943, 38.5655449826296], [68.79465937614441, 38.56566662054237], [68.79448771476746, 38.56582181344251], [68.79459500312805, 38.56589731257003], [68.79485785961151, 38.56565823172744], [68.7947130203247, 38.56556176028499], [68.79479348659515, 38.56549464963996], [68.79483640193939, 38.56552401055487], [68.79495441913605, 38.56541495566756], [68.79490613937378, 38.565381400284366], [68.79499733448029, 38.565301706186375], [68.79513144493103, 38.565389789131615], [68.79538893699646, 38.565154901037715], [68.79529774188995, 38.56509198445363], [68.79513144493103, 38.56523878973084], [68.79494905471802, 38.56511715109389], [68.79485249519348, 38.565205234265335], [68.79489004611969, 38.565234595298506], [68.79481494426727, 38.565301706186375], [68.79448235034943, 38.56507940113022], [68.79421949386597, 38.56507940113022], [68.79420340061188, 38.565096178894294]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.79042148590088, 38.56507940113022], [68.79062533378601, 38.565209428699376], [68.79041075706482, 38.56541495566756], [68.79055559635162, 38.565507232890695], [68.79087746143341, 38.56520103983104], [68.79068434238434, 38.56507940113022], [68.79042148590088, 38.56507940113022]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.78879070281982, 38.56507940113022], [68.78900527954102, 38.56515909547471], [68.78895699977875, 38.56524298416292], [68.78933787345886, 38.565381400284366], [68.78928422927856, 38.56546948313192], [68.78967583179474, 38.56561209322763], [68.78962218761444, 38.56570437019758], [68.78997087478638, 38.565830202238374], [68.79005670547485, 38.5656875925755], [68.78983676433563, 38.56561209322763], [68.7898850440979, 38.56553659380046], [68.78942906856537, 38.5653688170116], [68.78946661949158, 38.565310095042975], [68.7890374660492, 38.565154901037715], [68.78908038139343, 38.56507940113022], [68.78879070281982, 38.56507940113022]]]}}, {"type": "Feature", "properties": {"h": 11}, "geometry": {"type": "Polygon", "coordinates": [[[68.7836891412735, 38.56507940113022], [68.78402173519135, 38.56515070660049], [68.7840485572815, 38.56507940113022], [68.7836891412735, 38.56507940113022]]]}}]};
+let DATES=['27.06','09.07','21.07','14.08','26.08','07.09','19.09','01.10','13.10','25.10','06.11'];
+// demo: height in metres per date (illustrative), signals in dB
+const DEMO={
+ 'zhk-001':{h:[18,22,27,33,38,44,50,56,62,68,74],site:[-13.8,-13.5,-12.9,-12.1,-11.6,-11.0,-10.4,-9.9,-9.3,-8.9,-8.4],bg:[-13.2,-13.4,-13.1,-13.3,-13.0,-13.2,-13.1,-13.3,-13.0,-13.2,-13.1],trend:1.2,coh:.18,ground:-2},
+ 'zhk-002':{h:[34,37,41,45,49,53,57,61,65,69,72],site:[-12.6,-12.4,-12.0,-11.6,-11.3,-10.9,-10.5,-10.1,-9.7,-9.4,-9.0],bg:[-12.9,-13.0,-12.8,-13.1,-12.9,-13.0,-12.8,-13.0,-12.9,-13.1,-12.9],trend:.8,coh:.24,ground:-3},
+ 'zhk-003':{h:[24,24,24,24,24,24,24,24,24,24,24],site:[-9.6,-9.7,-9.5,-9.6,-9.8,-9.6,-9.5,-9.7,-9.6,-9.6,-9.5],bg:[-12.8,-12.9,-12.7,-13.0,-12.8,-12.9,-12.7,-12.9,-12.8,-13.0,-12.8],trend:.02,coh:.71,ground:-1}};
+let items=GEO.features.map(f=>{const p=f.properties;return{id:p.id,name:p.name.replace(/\s*\(.*?\)\s*/g,' ').trim(),addr:(p.floors||'').split('·')[0].trim(),district:p.district,on:p.truth!=='stalled'&&p.truth!=='completed',done:p.truth==='completed',d:DEMO[p.id],f}});
+let T=DATES.length-1;
+
+/* ---------- data from SiteSAR API; falls back to demo data above if API is unreachable ---------- */
+// External API address; for local dev — localhost:8080; override via ?api=https://…
+const STATUS_LABELS={
+  active:'Under construction',
+  possible:'Possible activity',
+  no_changes:'No changes detected',
+  insufficient:'Object too small for radar',
+  pending:'No analysis data',
+  'Стройка идёт':'Under construction',
+  'Возможна активность':'Possible activity',
+  'Изменений не видно':'No changes detected',
+  'Объект слишком мал для радара':'Object too small for radar',
+  'Нет данных анализа':'No analysis data',
+  'Построен · изменений нет':'Completed · no changes'
+};
+const RISK_LABELS={
+  stable:'Ground stable',
+  moderate_shift:'Moderate ground displacement',
+  high_risk:'Significant ground displacement',
+  'Грунт стабилен':'Ground stable',
+  'Умеренное смещение грунта':'Moderate ground displacement',
+  'Значительное смещение грунта':'Significant ground displacement'
+};
+function translateReason(s){
+  if(!s||typeof s!=='string')return s;
+  let m;
+  if((m=s.match(/совокупность признаков сильнее, чем у (\d+)% случайных участков города того же размера/)))
+    return `composite indicators stronger than ${m[1]}% of random city parcels of similar size`;
+  if((m=s.match(/яркость радара \((.*?)\) на участке выросла на ([\d.]+) дБ относительно района — признак возведения конструкций/)))
+    return `radar backscatter (${m[1]}) on site increased by ${m[2]} dB relative to surroundings — indicates structure erection`;
+  if((m=s.match(/яркость радара \((.*?)\) на участке упала на ([\d.]+) дБ относительно района — признак сноса старых построек, расчистки или котлована/)))
+    return `radar backscatter (${m[1]}) on site dropped by ${m[2]} dB relative to surroundings — indicates demolition, site clearance, or excavation`;
+  if(s==='яркость радара на участке выросла относительно района')
+    return 'radar backscatter on site increased relative to surroundings';
+  if(s==='сигнал сильно скачет от снимка к снимку')
+    return 'signal fluctuates significantly between passes';
+  if(s==='когерентность (80 м) на участке ниже, чем вокруг')
+    return 'coherence (80 m) on site lower than surroundings';
+  if(s==='детальная когерентность (10×5 м) на участке ниже, чем вокруг')
+    return 'detailed coherence (10×5 m) on site lower than surroundings';
+  if(s==='детальная яркость (10×5 м) изменилась сильнее, чем у 95% кварталов')
+    return 'detailed backscatter (10×5 m) changed more than 95% of city blocks';
+  if((m=s.match(/ни один признак отдельно не превысил порог, но несколько повышены одновременно:\s*(.*)/)))
+    return 'no single indicator exceeded the threshold individually, but several are elevated concurrently: '+m[1];
+  if(s==='стоит перепроверить на следующих снимках или на месте')
+    return 'recommended to verify on subsequent passes or on-site';
+  if(s==='признаков активности сверх обычного для города не найдено')
+    return 'no activity detected beyond normal city baseline';
+  if((m=s.match(/площадь ([\d.]+) м² — меньше 4 пикселей радара 20×20 м/)))
+    return `area ${m[1]} m² — smaller than 4 radar pixels of 20×20 m`;
+  if((m=s.match(/детальная когерентность: ([\d.]+) на участке против ([\d.]+) вокруг(?:\s*\((.*?)\))?/)))
+    return `detailed coherence: ${m[1]} on site vs ${m[2]} surroundings`+(m[3]?` (${m[3]})`:'');
+  if((m=s.match(/смещение грунта вокруг:\s*([+-]?[\d.]+)\s*±\s*([\d.]+)\s*мм(?:\s*—\s*(.*))?/))){
+    const risk=m[3]?(RISK_LABELS[m[3].trim()]||m[3].trim()):'';
+    return `ground displacement around site: ${m[1]} ± ${m[2]} mm`+(risk?` — ${risk}`:'');
+  }
+  return s;
+}
+const API_PUBLIC='https://apex-api.code.tj';
+const API=(new URLSearchParams(location.search).get('api')||window.SITESAR_API||
+  (/^(localhost|127\.0\.0\.1|)$/.test(location.hostname)?'http://localhost:8080':API_PUBLIC)).replace(/\/$/,'')+'/api/v1';
+let LIVE=false,META=null,DATES_ISO=null,PERIOD={};
+const isoDates=()=>DATES_ISO||DATES.map(s=>'2026-'+s.slice(3,5)+'-'+s.slice(0,2));   // demo: 2026
+const yr=i=>isoDates()[i].slice(0,4);
+const dayX=()=>{const a=isoDates().map(s=>Date.parse(s)/864e5);return a.map(v=>Math.round(v-a[0]))}; // days from first date
+const per=(a,b)=>a&&b?ddmm(a)+'–'+ddmm(b):'';
+const ddmm=s=>s.slice(8,10)+'.'+s.slice(5,7);
+const fmt=(v,n=2,sign=true)=>v==null?'—':(sign&&v>0?'+':'')+v.toFixed(n);
+async function loadApi(){
+  try{
+    const j=u=>fetch(API+u).then(r=>{if(!r.ok)throw new Error(r.status+' '+u);return r.json()});
+    const [meta,fc]=await Promise.all([j('/meta'),j('/complexes')]);
+    if(!fc.features.length||!meta.dates.length)throw new Error('no analysis data');
+    const det=await Promise.all(fc.features.map(f=>j('/complexes/'+encodeURIComponent(f.id))));
+    META=meta;DATES_ISO=meta.dates;DATES=meta.dates.map(ddmm);T=DATES.length-1;
+    const gp=meta.gunw_pairs||[],gd=meta.gslc_dates||[];
+    PERIOD={gcov:per(meta.dates[0],meta.dates[meta.dates.length-1]),            // periods of different products
+            gunw:gp.length?per(gp[0][0],gp[gp.length-1][1]):'',gslc:gd.length>1?per(gd[0],gd[gd.length-1]):''};
+    items=fc.features.map((f,k)=>{const p=f.properties,c=det[k],ts=c.timeseries;
+      // 3D scene shows ground truth from catalog (reported_status); if unknown — from radar.
+      // Panel, badge, and marker color reflect radar determination (radarOn, label).
+      const radarOn=p.status==='active'||p.status==='possible',rep=p.reported_status;
+      const done=rep==='completed';
+      const on=!done&&(rep==='active'||(rep!=='stalled'&&radarOn));
+      const H=((c.raw&&c.raw.max_floors)||16)*FLOOR;                       // 3D height from floor count
+      const prog=p.signal.progress.length===DATES.length?p.signal.progress:DATES.map(()=>1);
+      const grow=radarOn&&prog.some(x=>x>0);                                 // animate height growth only if radar confirms activity
+      const rawLabel=done&&!radarOn?'Completed · no changes':p.status_label;
+      const label=STATUS_LABELS[p.status]||STATUS_LABELS[rawLabel]||rawLabel;
+      return{id:p.id,name:p.name.replace(/\s*\(.*?\)\s*/g,' ').trim(),addr:p.address||'',district:p.district,on,
+        status:p.status,label,done,radarOn,conf:p.confidence,reasons:(c.reasons||[]).map(translateReason),
+        d:{site:ts.site_hh_db,bg:ts.background_hh_db,trend:p.signal.trend_db_per_month,coh:p.coherence.site,cohSrc:p.coherence.source,
+           ground:p.ground.shift_mm,sigma:p.ground.sigma_mm,risk:RISK_LABELS[p.ground.risk]||RISK_LABELS[p.ground.risk_label]||p.ground.risk_label,
+           h:prog.map(x=>Math.round(on?(grow?H*(.3+.7*x):H*.7):done?H:H*.35))},   // growth follows signal progress; otherwise static carcass
+        f:{type:'Feature',properties:p,geometry:f.geometry}}});
+    LIVE=true;
+  }catch(e){console.warn('SiteSAR API unavailable ('+API+') — showing demo data:',e)}
+  const chip=document.getElementById('demo-chip');if(chip)chip.style.display=LIVE?'none':'';
+  const r=document.getElementById('rng');r.max=DATES.length-1;r.value=T;
+  document.getElementById('dt').innerHTML=DATES[T]+'<em>.'+yr(T)+'</em>';
+  if(LIVE){const ft=document.getElementById('foot');if(ft)ft.textContent=`NASA–ISRO NISAR imagery · ${PERIOD.gcov}.${yr(T)} · ${DATES.length} passes · analysis updated ${(u=>[u.getDate(),u.getMonth()+1].map(n=>String(n).padStart(2,'0')).join('.')+'.'+u.getFullYear())(new Date(META.updated_at))} · © OpenStreetMap, OpenFreeMap`}
+}
+const dataReady=loadApi();
+
+/* ---------- map ---------- */
+// ===== 3D construction models (three.js custom layer) =====
+const ORIGIN_LL=[68.775,38.578];
+const ORIGIN=maplibregl.MercatorCoordinate.fromLngLat(ORIGIN_LL,0);
+const MS=ORIGIN.meterInMercatorCoordinateUnits();
+const toLocal=ll=>{const m=maplibregl.MercatorCoordinate.fromLngLat(ll,0);return[(m.x-ORIGIN.x)/MS,(m.y-ORIGIN.y)/MS]}; // [east, south]
+const FLOOR=3.2;
+const MAT={
+  slab:new THREE.MeshStandardMaterial({color:0xC9CDD3,roughness:.9}),
+  col:new THREE.MeshStandardMaterial({color:0xB8BDC6,roughness:.85}),
+  glass:new THREE.MeshStandardMaterial({color:0x7FA3E0,roughness:.15,metalness:.35,transparent:true,opacity:.9}),
+  frame:new THREE.MeshStandardMaterial({color:0x9AA0AA,roughness:.95}),
+  rebar:new THREE.MeshStandardMaterial({color:0x7A4E35,roughness:.8}),
+  craneY:new THREE.MeshStandardMaterial({color:0xF2B705,roughness:.55}),
+  craneG:new THREE.MeshStandardMaterial({color:0x8B919B,roughness:.8}),
+  dark:new THREE.MeshStandardMaterial({color:0x2B2F36,roughness:.7}),
+  weight:new THREE.MeshStandardMaterial({color:0x6B7280,roughness:.9}),
+  load:new THREE.MeshStandardMaterial({color:0x7B8794,roughness:.8}),
+  light:new THREE.MeshBasicMaterial({color:0xFF3B30}),
+  ground:new THREE.MeshStandardMaterial({color:0xD8C9A8,roughness:1})
+};
+const BOX=new THREE.BoxGeometry(1,1,1);
+function box(w,h,d,mat,x,y,z){const m=new THREE.Mesh(BOX,mat);m.scale.set(w,h,d);m.position.set(x,y,z);return m}
+
+// orientation + size of the site from its polygon
+function fitSite(ring){
+  const p=ring.slice(0,-1).map(toLocal);let best=0,ang=0;
+  for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];const L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L>best){best=L;ang=Math.atan2(b[1]-a[1],b[0]-a[0])}}
+  const ux=[Math.cos(ang),Math.sin(ang)],vx=[-Math.sin(ang),Math.cos(ang)];
+  let u0=1e9,u1=-1e9,v0=1e9,v1=-1e9;p.forEach(q=>{const u=q[0]*ux[0]+q[1]*ux[1],v=q[0]*vx[0]+q[1]*vx[1];u0=Math.min(u0,u);u1=Math.max(u1,u);v0=Math.min(v0,v);v1=Math.max(v1,v)});
+  const cu=(u0+u1)/2,cv=(v0+v1)/2;
+  return{x:cu*ux[0]+cv*vx[0],z:cu*ux[1]+cv*vx[1],rot:-ang,L:u1-u0,W:v1-v0}; // three: x east, z south
+}
+
+// one tower: floors drawn up to `fl` (float), last `open` floors are bare frame
+function buildTower(g,w,d,fl,active,done){
+  g.clear();
+  const full=Math.floor(fl),frac=fl-full,open=done?0:active?2:999;
+  const colsX=Math.max(2,Math.round(w/6)+1),colsZ=Math.max(2,Math.round(d/6)+1);
+  const addCols=(y,h)=>{for(let i=0;i<colsX;i++)for(let k=0;k<colsZ;k++){if(i>0&&i<colsX-1&&k>0&&k<colsZ-1)continue;
+      g.add(box(.55,h,.55,active?MAT.col:MAT.frame,-w/2+i*w/(colsX-1),y+h/2,-d/2+k*d/(colsZ-1)))}};
+  g.add(box(w+3,.4,d+3,MAT.ground,0,.2,0));
+  for(let f=0;f<full;f++){
+    const y=f*FLOOR+.4;
+    g.add(box(w,.35,d,(active||done)?MAT.slab:MAT.frame,0,y+.17,0));
+    if(f<full-open) g.add(box(w-.5,FLOOR-.45,d-.5,MAT.glass,0,y+.35+(FLOOR-.45)/2,0));
+    else addCols(y+.35,FLOOR-.35);
+  }
+  const top=full*FLOOR+.4;
+  g.add(box(w,.35,d,(active||done)?MAT.slab:MAT.frame,0,top+.17,0));
+  if(active&&frac>.02) addCols(top+.35,(FLOOR-.35)*frac);              // floor being poured right now
+  if(!active&&!done){ for(let i=0;i<10;i++){const x=-w/2+Math.random()*w,z=-d/2+Math.random()*d;g.add(box(.12,1.6,.12,MAT.rebar,x,top+1.1,z))} }
+  return top;
+}
+
+// tower crane; returns parts that animate
+function buildCrane(h,jibL,active){
+  const g=new THREE.Group(),mat=active?MAT.craneY:MAT.craneG,s=2.2;
+  [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>g.add(box(.25,h,.25,mat,a*s/2,h/2,b*s/2)));
+  for(let y=1.5;y<h;y+=3){g.add(box(s,.18,.18,mat,0,y,s/2));g.add(box(s,.18,.18,mat,0,y,-s/2));g.add(box(.18,.18,s,mat,s/2,y,0));g.add(box(.18,.18,s,mat,-s/2,y,0));
+    const dg=box(Math.hypot(s,3),.14,.14,mat,0,y+1.5,s/2);dg.rotation.z=Math.atan2(3,s);g.add(dg)}
+  const slew=new THREE.Group();slew.position.y=h;g.add(slew);
+  slew.add(box(3,2.4,2.6,MAT.dark,1.2,1.4,0));                         // cab
+  slew.add(box(.25,6,.25,mat,0,3,0));                                     // tower head
+  slew.add(box(jibL,.9,1.2,mat,jibL/2,.6,0));                             // jib
+  for(let x=2;x<jibL;x+=3){const t=box(.12,.9,.12,mat,x,.6,.55);slew.add(t)}
+  slew.add(box(14,.9,1.4,mat,-7,.6,0));                                   // counter-jib
+  slew.add(box(3.5,2.2,2.2,MAT.weight,-12.5,-.6,0));                       // counterweight
+  const tie1=box(Math.hypot(jibL*.7,5.4),.1,.1,mat,jibL*.35,3.5,0);tie1.rotation.z=-Math.atan2(5.4,jibL*.7);slew.add(tie1);
+  const tie2=box(Math.hypot(13,5.4),.1,.1,mat,-6.5,3.5,0);tie2.rotation.z=Math.atan2(5.4,13);slew.add(tie2);
+  const trolley=new THREE.Group();slew.add(trolley);
+  trolley.add(box(1.6,.5,1.4,MAT.dark,0,0,0));
+  const cable=box(.06,1,.06,MAT.dark,0,0,0);trolley.add(cable);
+  const load=new THREE.Group();trolley.add(load);
+  load.add(box(4.5,.5,1.2,MAT.load,0,0,0));                              // concrete beam / bucket
+  load.add(box(.4,.6,.4,MAT.dark,0,.55,0));
+  const lamp=box(.6,.6,.6,MAT.light,0,6.4,0);slew.add(lamp);
+  return{g,slew,trolley,cable,load,lamp,jibL,h};
+}
+
+// paused site: excavation pit with dirt berms and a parked yellow bulldozer
+const MAT2={dirt:new THREE.MeshStandardMaterial({color:0xB08D63,roughness:1}),pitFloor:new THREE.MeshStandardMaterial({color:0x7E6243,roughness:1}),
+  dozer:new THREE.MeshStandardMaterial({color:0xFFC400,emissive:0x8A6400,emissiveIntensity:.55,roughness:.4,metalness:.1}),track:new THREE.MeshStandardMaterial({color:0x2B2F36,roughness:.8}),
+  glassD:new THREE.MeshStandardMaterial({color:0x8FB3D9,roughness:.2,metalness:.3}),fence:new THREE.MeshStandardMaterial({color:0x9AA3B2,roughness:.9})};
+function buildDozer(){const d=new THREE.Group();d.scale.set(2.1,2.1,2.1);
+  d.add(box(5.2,1.0,.9,MAT2.track,0,.5,1.35));d.add(box(5.2,1.0,.9,MAT2.track,0,.5,-1.35));
+  d.add(box(4.2,1.4,2.6,MAT2.dozer,-.3,1.6,0));d.add(box(1.8,1.6,2.0,MAT2.dozer,-1.1,3.1,0));d.add(box(1.5,1.1,2.05,MAT2.glassD,-1.1,3.2,0));
+  d.add(box(.25,1.6,3.6,MAT2.dozer,3.2,1.0,0));d.add(box(1.4,.25,.25,MAT2.track,2.4,1.3,1.1));d.add(box(1.4,.25,.25,MAT2.track,2.4,1.3,-1.1));d.add(box(.25,.9,.25,MAT2.track,-1.9,2.7,.7));
+  return d}
+function interiorPoint(r){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;r.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
+  const ins=(x,y)=>{let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>y)!=(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c};
+  let best=null,bd=1e9;const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  for(let i=1;i<40;i++)for(let k=1;k<40;k++){const x=x0+(x1-x0)*i/40,y=y0+(y1-y0)*k/40;if(!ins(x,y))continue;
+    let m=1e9;for(let a=0;a<r.length-1;a++){const[px,py]=r[a],[qx,qy]=r[a+1];const dx=qx-px,dy=qy-py,t=Math.max(0,Math.min(1,((x-px)*dx+(y-py)*dy)/(dx*dx+dy*dy||1)));m=Math.min(m,Math.hypot(x-px-t*dx,(y-py-t*dy)*1.27))}
+    const sc=-m;if(sc<bd){bd=sc;best=[x,y]}}
+  return best||[cx,cy]}
+function buildPit_unused(L,W){
+  const g=new THREE.Group(),pl=Math.min(L*.8,70),pw=Math.min(W*.75,40);
+  g.add(box(pl,.15,pw,MAT2.pitFloor,0,.08,0));                                   // dug-out floor
+  const bh=2.2,bt=4;                                                                // earth berms around the pit
+  g.add(box(pl+bt*2,bh,bt,MAT2.dirt,0,bh/2,pw/2+bt/2));g.add(box(pl+bt*2,bh,bt,MAT2.dirt,0,bh/2,-pw/2-bt/2));
+  g.add(box(bt,bh,pw,MAT2.dirt,pl/2+bt/2,bh/2,0));g.add(box(bt,bh,pw,MAT2.dirt,-pl/2-bt/2,bh/2,0));
+  const pile=new THREE.Mesh(new THREE.ConeGeometry(7,5,7),MAT2.dirt);pile.position.set(pl/2-9,2.5,-pw/2+9);g.add(pile);   // spoil heap
+  const pile2=new THREE.Mesh(new THREE.ConeGeometry(4.5,3,6),MAT2.dirt);pile2.position.set(pl/2-17,1.5,-pw/2+6);g.add(pile2);
+  for(let x=-pl/2-bt;x<=pl/2+bt;x+=6){g.add(box(.15,2,.15,MAT2.fence,x,1,pw/2+bt+2))}                                  // fence posts
+  g.add(box(pl+bt*2,1.4,.06,MAT2.fence,0,1.2,pw/2+bt+2));
+  // bulldozer, parked inside the pit
+  const d=new THREE.Group();d.position.set(-pl/4,0,pw/6);d.rotation.y=.5;g.add(d);
+  d.add(box(5.2,1.0,.9,MAT2.track,0,.5,1.35));d.add(box(5.2,1.0,.9,MAT2.track,0,.5,-1.35));   // tracks
+  d.add(box(4.2,1.4,2.6,MAT2.dozer,-.3,1.6,0));                                                  // body
+  d.add(box(1.8,1.6,2.0,MAT2.dozer,-1.1,3.1,0));                                                 // cab
+  d.add(box(1.5,1.1,2.05,MAT2.glassD,-1.1,3.2,0));
+  d.add(box(.25,1.6,3.6,MAT2.dozer,3.2,1.0,0));                                                  // blade
+  d.add(box(1.4,.25,.25,MAT2.track,2.4,1.3,1.1));d.add(box(1.4,.25,.25,MAT2.track,2.4,1.3,-1.1));// blade arms
+  d.add(box(.25,.9,.25,MAT2.track,-1.9,2.7,.7));                                                 // exhaust
+  return g;
+}
+const SITES=[]; // filled per item
+function makeSites(){
+  items.forEach((it,idx)=>{
+    const fit=fitSite(it.f.geometry.coordinates[0]);
+    const root=new THREE.Group();root.position.set(fit.x,0,fit.z);root.rotation.y=fit.rot;
+    if(!it.on&&!it.done){const ip=interiorPoint(it.f.geometry.coordinates[0]),lp=toLocal(ip);root.position.set(lp[0],0,lp[1]);root.rotation.y=.6;
+      root.add(buildDozer());SITES.push({it,root,towers:[],crane:null,cur:0,phase:0});return;}
+    const n=it.id==='zhk-002'?3:it.id==='zhk-001'?2:1;
+    const tl=Math.min(42,fit.L/n*.72),tw=Math.min(22,fit.W*.62);
+    const towers=[];
+    for(let k=0;k<n;k++){const g=new THREE.Group();g.position.set(-fit.L/2+fit.L/n*(k+.5),0,0);root.add(g);towers.push({g,w:tl,d:tw,lag:k*.12,built:-1})}
+    const maxFl=Math.max(...it.d.h)/FLOOR;
+    const crane=it.done?null:buildCrane(maxFl*FLOOR+16,Math.min(52,fit.L*.55+12),it.on);   // completed building has no crane
+    if(crane){crane.g.position.set(-fit.L/2+fit.L/n*.5+tl/2+6,0,tw/2+5);
+    crane.slew.rotation.y=it.on?0:2.3;
+    root.add(crane.g);}
+    SITES.push({it,root,towers,crane,cur:it.d.h[T]/FLOOR,phase:idx*1.7});
+  });
+}
+function targetFloors(s){return s.it.d.h[T]/FLOOR}
+
+const threeLayer={id:'construction-3d',type:'custom',renderingMode:'3d',
+  onAdd(map,gl){
+    this.camera=new THREE.Camera();this.scene=new THREE.Scene();
+    this.scene.add(new THREE.AmbientLight(0xffffff,.85));
+    const sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(-60,140,90);this.scene.add(sun);
+    const fill=new THREE.DirectionalLight(0xdbe6ff,.45);fill.position.set(80,60,-70);this.scene.add(fill);
+    makeSites();SITES.forEach(s=>this.scene.add(s.root));
+    this.renderer=new THREE.WebGLRenderer({canvas:map.getCanvas(),context:gl,antialias:true});this.renderer.autoClear=false;
+    this.t0=performance.now();
+  },
+  render(gl,matrix){
+    const t=(performance.now()-this.t0)/1000;
+    SITES.forEach(s=>{
+      const tgt=targetFloors(s);s.cur+= (tgt-s.cur)*0.06; if(Math.abs(tgt-s.cur)<.01)s.cur=tgt;
+      s.towers.forEach(tw=>{
+        const fl=s.it.on?Math.max(1,s.cur*(1-tw.lag)):s.cur;
+        const key=Math.round(fl*8)/8;
+        if(key!==tw.built){buildTower(tw.g,tw.w,tw.d,fl,s.it.on,s.it.done);tw.built=key}
+      });
+      const c=s.crane; if(!c) return;
+      if(s.it.on){
+        c.slew.rotation.y=Math.sin(t*.25+s.phase)*1.1;
+        const r=c.jibL*(.45+.35*(.5+.5*Math.sin(t*.4+s.phase)));c.trolley.position.set(r,0,0);
+        const drop=6+3*(.5+.5*Math.sin(t*.7+s.phase));c.cable.scale.y=drop;c.cable.position.y=-drop/2;c.load.position.y=-drop-.3;
+        c.load.rotation.y=Math.sin(t*.9)*.3;c.lamp.visible=Math.sin(t*4)>0;
+      } else { c.trolley.position.set(c.jibL*.8,0,0);c.cable.scale.y=2;c.cable.position.y=-1;c.load.visible=false;c.lamp.visible=false; }
+    });
+    const m=new THREE.Matrix4().fromArray(matrix);
+    const l=new THREE.Matrix4().makeTranslation(ORIGIN.x,ORIGIN.y,ORIGIN.z).scale(new THREE.Vector3(MS,-MS,MS)).multiply(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0),Math.PI/2));
+    this.camera.projectionMatrix=m.multiply(l);
+    this.renderer.resetState();this.renderer.render(this.scene,this.camera);
+    map.triggerRepaint();
+  }};
+
+const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/positron',center:[68.775,38.578],zoom:13.6,pitch:58,bearing:-24,antialias:true,attributionControl:{compact:true}});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
+function siteFC(){return{type:'FeatureCollection',features:items.map(it=>({type:'Feature',geometry:it.f.geometry,properties:{id:it.id,on:it.on?1:it.done?2:0,h:it.d.h[T]}}))}}
+function frameFC(){ // stalled: thin "frame" columns along the outline = unfinished carcass
+  const feats=[];items.filter(i=>!i.on&&!i.done).forEach(it=>{const ring=it.f.geometry.coordinates[0];
+    for(let k=0;k<ring.length-1;k++){const [x,y]=ring[k];const dx=0.000045,dy=0.000035;
+      feats.push({type:'Feature',properties:{h:it.d.h[T]+9},geometry:{type:'Polygon',coordinates:[[[x-dx,y-dy],[x+dx,y-dy],[x+dx,y+dy],[x-dx,y+dy],[x-dx,y-dy]]]}})}});
+  return{type:'FeatureCollection',features:feats}}
+const markers={};
+map.on('load',async()=>{await dataReady;
+  const firstSym=map.getStyle().layers.find(l=>l.type==='symbol')?.id;
+  map.addLayer({id:'city-3d',type:'fill-extrusion',source:'openmaptiles','source-layer':'building',minzoom:12,
+    filter:['all',['!=',['id'],274831580],['!',['within',{type:'MultiPolygon',coordinates:items.map(it=>(it.on||it.done)?it.f.geometry.coordinates:clearZone(it.f.geometry.coordinates[0],45))}]]],paint:{'fill-extrusion-color':'#E3E6EA','fill-extrusion-height':['coalesce',['get','render_height'],8],'fill-extrusion-base':['coalesce',['get','render_min_height'],0],'fill-extrusion-opacity':['interpolate',['linear'],['zoom'],13.95,0,14.4,.85]}},firstSym);
+  map.addSource('keep',{type:'geojson',data:KEEP});
+  map.addLayer({id:'city-keep',type:'fill-extrusion',source:'keep',paint:{'fill-extrusion-color':'#E3E6EA','fill-extrusion-height':['get','h'],'fill-extrusion-opacity':['interpolate',['linear'],['zoom'],13.95,0,14.4,.85]}},firstSym);
+  map.addSource('sites',{type:'geojson',data:siteFC()});
+  map.addLayer({id:'site-foot',type:'fill',source:'sites',paint:{'fill-color':['case',['==',['get','on'],1],'#2B59C3',['==',['get','on'],2],'#2F8F5B','#7C8799'],'fill-opacity':.12}});
+  map.addLayer({id:'pause-ground',type:'fill-extrusion',source:'sites',filter:['==',['get','on'],0],paint:{'fill-extrusion-color':'#A47E55','fill-extrusion-height':0.6,'fill-extrusion-base':0,'fill-extrusion-opacity':1}});
+  map.addLayer(threeLayer);
+  map.addLayer({id:'site-line-on',type:'line',source:'sites',filter:['==',['get','on'],1],paint:{'line-color':'#2B59C3','line-width':2.5}});
+  map.addLayer({id:'site-line-off',type:'line',source:'sites',filter:['==',['get','on'],0],paint:{'line-color':'#7A5A3A','line-width':2.5}});
+  map.addLayer({id:'site-line-done',type:'line',source:'sites',filter:['==',['get','on'],2],paint:{'line-color':'#2F8F5B','line-width':2.5}});
+  items.forEach(it=>{const el=document.createElement('div');el.className='tag';el.innerHTML=`<i style="background:${(it.radarOn??it.on)?'#2B59C3':it.done?'#2F8F5B':'#7C8799'}"></i>${it.name}`;el.onclick=()=>go(it.id);
+    const c=centroid(it.f.geometry.coordinates[0]);markers[it.id]=new maplibregl.Marker({element:el,anchor:'bottom',offset:LABEL_OFFSET}).setLngLat(c).addTo(map)});
+  map.on('click','site-foot',e=>go(e.features[0].properties.id));
+  map.on('mouseenter','site-foot',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','site-foot',()=>map.getCanvas().style.cursor='');
+  fitAll(false); route();
+  setTimeout(prefetchTiles,300);
+  if(!location.hash&&!/notour/.test(location.search))setTimeout(runTour,1500);   // auto-tour on launch (?notour to disable)
+});
+// Complex labels. In standard mode, selected complex label is hidden (shown in panel).
+// In tour mode, current complex label is visible on top and lowered below parcel to avoid obstructing 3D model.
+const LABEL_OFFSET=[0,-6];
+function applyMarkers(id){const tour=typeof TOUR!=='undefined'&&TOUR.on;
+  Object.entries(markers).forEach(([k,m])=>{const el=m.getElement(),cur=k===id;
+    el.style.display=cur&&!tour?'none':'';el.classList.toggle('active',cur&&tour);el.style.zIndex=cur&&tour?'5':'';
+    if(!(cur&&tour))m.setOffset(LABEL_OFFSET)});
+  if(tour)placeTourLabel()}
+function placeTourLabel(){if(typeof TOUR==='undefined'||!TOUR.on)return;
+  const id=location.hash.slice(1),m=markers[id],it=items.find(i=>i.id===id);if(!m||!it)return;
+  const ring=it.f.geometry.coordinates[0],c=map.project(centroid(ring));
+  let low=-1e9;ring.forEach(p=>{low=Math.max(low,map.project(p).y)});              // bottom edge of parcel on screen
+  m.setOffset([0,Math.max(0,low-c.y)+m.getElement().offsetHeight+14])}          // anchor bottom -> label entirely below parcel
+function clearZone(ring,m){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;ring.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});const dy=m/111320,dx=m/(111320*Math.cos(y0*Math.PI/180));return[[[x0-dx,y0-dy],[x1+dx,y0-dy],[x1+dx,y1+dy],[x0-dx,y1+dy],[x0-dx,y0-dy]]]}
+function centroid(r){let x=0,y=0;const n=r.length-1;for(let i=0;i<n;i++){x+=r[i][0];y+=r[i][1]}return[x/n,y/n]}
+function fitAll(anim=true){const b=new maplibregl.LngLatBounds();items.forEach(it=>it.f.geometry.coordinates[0].forEach(c=>b.extend(c)));
+  map.fitBounds(b,{padding:{top:90,bottom:140,left:60,right:60},pitch:map.getPitch(),bearing:-24,duration:anim?900:0,maxZoom:15.2})}
+function setT(i){T=i;document.getElementById('rng').value=i;document.getElementById('dt').innerHTML=DATES[i]+'<em>.'+yr(i)+'</em>';paintTimeline();
+  
+  if(chart){chart.data.datasets[0].pointRadius=DATES.map((_,k)=>k===i?6:0);chart.update('none')}}
+document.getElementById('rng').oninput=e=>setT(+e.target.value);
+let timer=null;document.getElementById('play').onclick=()=>{
+  if(timer){clearInterval(timer);timer=null;pi(false);return}
+  if(T===DATES.length-1)setT(0);pi(true);timer=setInterval(()=>{if(T>=DATES.length-1){clearInterval(timer);timer=null;pi(false);return}setT(T+1)},650)};
+function pi(p){document.getElementById('pi').innerHTML=p?'<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>':'<path d="M7 4l13 8-13 8z"/>'}
+document.getElementById('v3d').onclick=()=>{map.easeTo({pitch:58,bearing:-24,duration:700});vp(true)};
+document.getElementById('v2d').onclick=()=>{map.easeTo({pitch:0,bearing:0,duration:700});vp(false)};
+function vp(a){document.getElementById('v3d').setAttribute('aria-pressed',a);document.getElementById('v2d').setAttribute('aria-pressed',!a)}
+
+/* ---------- panel ---------- */
+const view=document.getElementById('view'),dock=document.getElementById('dock');
+const ICON_ON='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V4M3 4h17M7 4l-3 3M16 4v4M14 8h4v3h-4zM3 21h9M12 21v-6h7v6"/></svg>';
+const ICON_OFF='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+function spark(vals,on){vals=vals.filter(v=>v!=null);if(vals.length<2)return'';const w=64,h=28,mn=Math.min(...vals),mx=Math.max(...vals),rg=(mx-mn)||1;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1)*w).toFixed(1)},${(h-3-(v-mn)/rg*(h-6)).toFixed(1)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${on?'#2B59C3':'#6B7586'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+function renderStats(){const on=items.filter(i=>(i.radarOn??i.on)&&!i.done).length,done=items.filter(i=>i.done).length,off=items.length-on-done;
+  document.getElementById('stats').innerHTML=`<div class="stat on"><b>${on}</b><span>active</span></div>${done?`<div class="stat"><b>${done}</b><span>completed</span></div>`:''}<div class="stat off"><b>${off}</b><span>paused</span></div><div class="stat"><b>${DATES.length}</b><span>passes</span></div>`}
+function listView(q=''){const ql=q.trim().toLowerCase();dock.classList.remove('show');
+  const rows=items.filter(it=>!ql||(it.name+' '+it.addr+' '+it.district).toLowerCase().includes(ql));
+  view.innerHTML=`<div class="seclab">Sites on Map</div>
+  ${rows.length?`<ul class="list">${rows.map(it=>`<li><button class="row" data-id="${it.id}" aria-label="${it.name}, ${it.label||(it.on?'under construction':'paused')}">
+    <span class="dot ${(it.radarOn??it.on)?'on':'off'}"></span>
+    <span><div class="t">${it.name}</div><div class="a">${it.addr}</div><div class="st ${(it.radarOn??it.on)?'on':'off'}">${LIVE?`${it.label}${it.conf!=null?' · '+it.conf+'%':''}`:(it.on?`Under construction · +${it.d.trend.toFixed(1)} dB/mo`:'Paused · no changes')}</div></span>
+    ${spark(it.d.site,it.on)}
+    <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></li>`).join('')}</ul>`
+   :`<p class="empty">No results found for “${q.replace(/</g,'')}”. Try a complex name, street, or district.</p>`}
+  <div class="hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="#1F449C" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>Press ▶ on the map to watch buildings rise across satellite passes.</div>`;
+  view.querySelectorAll('.row').forEach(b=>b.onclick=()=>go(b.dataset.id))}
+let chart;
+function detailView(it){const d=it.d,on=it.radarOn??it.on;   // panel — radar output
+  dock.classList.add('show');
+  view.innerHTML=`<div class="detail">
+  <button class="back" id="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>All sites</button>
+  <div><span class="badge ${on?'on':'off'}"><i></i>${it.label||(on?'Under construction':'Paused')}</span></div>
+  <h1 class="dname">${it.name}</h1><div class="daddr">${it.addr}${it.district?' · '+it.district:''}</div>
+  <div class="verdict ${on?'on':'off'}"><div class="ic">${on?ICON_ON:ICON_OFF}</div>
+   <div><div class="v">${it.label||(on?'Construction active':'Construction paused')}</div><div class="r">${LIVE?(it.reasons[0]||'')+(it.conf!=null?` · confidence ${it.conf}%`:''):(on?`Signal rising by ${d.trend.toFixed(1)} dB/month — faster than surrounding area`:'Radar detects no changes for 5 consecutive months')}</div></div></div>
+  <div class="h">Radar Signal<small>dB, by pass</small></div><div class="chart"><canvas id="cv" role="img" aria-label="Radar backscatter chart for site and surroundings across dates"></canvas></div>
+  <div class="h">Metrics</div>
+  <div class="metrics">
+   <div class="m"><div class="k">Growth${LIVE?`<small>${PERIOD.gcov}</small>`:''}</div><div class="n">${fmt(d.trend)}</div><div class="s">dB per month</div></div>
+   <div class="m"><div class="k">Activity${LIVE?`<small>${d.cohSrc==='gslc_10x5m'?PERIOD.gslc:PERIOD.gunw}</small>`:''}</div><div class="n">${d.coh==null?'—':Math.round((1-d.coh)*100)+'%'}</div><div class="s">${d.coh==null?'no data':d.coh<.4?'surface changing':'minimal change'}</div><div class="bar"><b style="width:${(1-(d.coh??1))*100}%;background:${on?'#2B59C3':'#6B7586'}"></b></div></div>
+   <div class="m"><div class="k">Ground${LIVE?`<small>${PERIOD.gunw}</small>`:''}</div><div class="n">${d.ground==null?'—':fmt(d.ground,1)+(d.sigma?' ±'+d.sigma.toFixed(1):'')+' mm'}</div><div class="s">${d.risk||(d.ground==null?'no data':Math.abs(d.ground)<10?'stable':'shifting')}</div></div></div>
+  ${LIVE&&it.reasons.length?`<div class="h">Analysis Rationale</div><ul class="why">${it.reasons.map(r=>`<li>${r}</li>`).join('')}</ul>`:''}
+  <details class="how"><summary>Data Source & Methodology<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+   <p>The NISAR radar images Earth every 12 days through clouds and darkness. Reinforced concrete reflects radar signals much more strongly than bare ground: as floors rise, backscatter increases. “Activity” reflects surface alteration between passes (via phase coherence). “Ground” tracks vertical displacement via InSAR interferometry. Native pixel resolution is ~20 m; this is automated remote-sensing screening, not a substitute for on-site structural engineering inspection.</p></details>
+  </div>`;
+  document.getElementById('back').onclick=()=>go('');
+  document.getElementById('share').textContent='Share';
+  document.getElementById('share').onclick=async e=>{try{await navigator.clipboard.writeText(location.href);e.currentTarget.textContent='Link copied'}catch(_){e.currentTarget.textContent='Copy page URL'}};
+  if(chart)chart.destroy();
+  const col=on?'#2B59C3':'#6B7586';
+  const DX=dayX();   // X axis proportional to time: missing pass visible as gap
+  chart=new Chart(document.getElementById('cv'),{type:'line',data:{datasets:[
+    {label:'Site',data:d.site.map((y,k)=>({x:DX[k],y})),borderColor:col,backgroundColor:on?'rgba(43,89,195,.10)':'rgba(107,117,134,.10)',fill:true,tension:.35,borderWidth:3,pointRadius:DATES.map((_,k)=>k===T?6:0),pointBackgroundColor:'#fff',pointBorderColor:col,pointBorderWidth:3,pointHoverRadius:6},
+    {label:'Surrounding area',data:d.bg.map((y,k)=>({x:DX[k],y})),borderColor:'#C9CED6',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:.35}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onClick:(e,els)=>{if(els[0])setT(els[0].index)},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:3,color:'#344054',font:{weight:'600'}}},tooltip:{backgroundColor:'#0B1220',padding:10,cornerRadius:10,callbacks:{title:it=>it.length?DATES[it[0].dataIndex]+'.'+yr(it[0].dataIndex):'',label:c=>` ${c.dataset.label}: ${c.parsed.y.toFixed(1)} dB`}}},
+      scales:{x:{type:'linear',min:0,max:DX[DX.length-1],grid:{display:false},
+        afterBuildTicks:ax=>{ax.ticks=DX.filter((_,k)=>k%2===0||k===DX.length-1).map(v=>({value:v}))},
+        ticks:{color:'#98A2B3',maxRotation:0,autoSkip:false,callback:v=>{const k=DX.indexOf(v);return k<0?'':DATES[k]}}},y:{grid:{color:'#EEF0F3'},border:{display:false},ticks:{color:'#98A2B3',maxTicksLimit:5}}}}})}
+function paintTimeline(){const r=document.getElementById('rng');r.style.setProperty('--p',(T/Math.max(DATES.length-1,1)*100)+'%');
+  document.getElementById('passes').innerHTML=DATES.map((_,k)=>`<i class="${k<=T?'done':''}"></i>`).join('')}
+function go(id){location.hash=id||''}
+function route(){const id=location.hash.slice(1),it=items.find(i=>i.id===id);
+  applyMarkers(id);
+  if(it){detailView(it);const c=centroid(it.f.geometry.coordinates[0]);
+    if(TOUR.on){const k=TOUR.order.indexOf(id);   // in tour — slow cinematic flyover
+      map.flyTo({center:c,zoom:17.1,pitch:66,bearing:[-28,32,-55][k%3],duration:6500,curve:1.25,
+        easing:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,padding:{bottom:140},essential:true})}
+    else map.flyTo({center:c,zoom:17.4,pitch:64,bearing:-30,duration:1200,padding:{bottom:140}})}
+  else{listView(document.getElementById('q').value);if(map.loaded())fitAll()}
+  view.scrollTop=0}
+document.getElementById('q').addEventListener('input',e=>{if(location.hash)go('');listView(e.target.value)});
+/* ---------- panoramic tour: flyover across all complexes with pass replay ---------- */
+const TOUR={on:false,timers:[],order:[]};
+const tsleep=ms=>new Promise(res=>{TOUR.timers.push(setTimeout(res,ms))});
+const tmoved=()=>new Promise(res=>map.once('moveend',res));
+const tidle=cap=>new Promise(res=>{let done=false;const f=()=>{if(!done){done=true;res()}};map.once('idle',f);TOUR.timers.push(setTimeout(f,cap))});
+// tour order: from first active site to nearest next complex
+function tourOrder(){const left=items.slice();if(!left.length)return[];
+  let cur=left.splice(Math.max(0,left.findIndex(i=>i.on)),1)[0];const out=[cur.id];
+  while(left.length){const c=centroid(cur.f.geometry.coordinates[0]);let bi=0,bd=1e9;
+    left.forEach((it,i)=>{const q=centroid(it.f.geometry.coordinates[0]),d=Math.hypot(q[0]-c[0],q[1]-c[1]);if(d<bd){bd=d;bi=i}});
+    cur=left.splice(bi,1)[0];out.push(cur.id)}
+  return out}
+// prefetch browser cache with z14 tiles around each complex (3×3) — 3D city appears immediately
+let PREFETCH=null;
+function prefetchTiles(){if(PREFETCH)return PREFETCH;
+  const src=map.getSource('openmaptiles'),tpl=src&&src.tiles&&src.tiles[0];if(!tpl)return Promise.resolve();
+  const z=14,n=2**z,urls=new Set();
+  items.forEach(it=>{const [lon,lat]=centroid(it.f.geometry.coordinates[0]);
+    const x=Math.floor((lon+180)/360*n),r=lat*Math.PI/180,y=Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n);
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)urls.add(tpl.replace('{z}',z).replace('{x}',x+dx).replace('{y}',y+dy))});
+  PREFETCH=Promise.all([...urls].map(u=>fetch(u,{mode:'cors',credentials:'same-origin'}).then(r=>r.arrayBuffer()).catch(()=>0)));
+  return PREFETCH}
+function tourUI(){document.getElementById('tourBtn').setAttribute('aria-pressed',TOUR.on);
+  const l=document.getElementById('tlab');if(!TOUR.on){l.textContent='Satellite pass';l.classList.remove('tour')}}
+function stopTour(){if(!TOUR.on)return;TOUR.on=false;TOUR.timers.forEach(clearTimeout);TOUR.timers=[];map.stop();
+  applyMarkers(location.hash.slice(1));
+  if(timer){clearInterval(timer);timer=null;pi(false)}tourUI()}
+async function runTour(){if(TOUR.on)return;TOUR.on=true;TOUR.order=tourOrder();tourUI();
+  const l=document.getElementById('tlab');l.classList.add('tour');
+  if(location.hash){go('');await tsleep(1400)}else await tsleep(900);
+  await Promise.race([prefetchTiles(),tsleep(4000)]);if(!TOUR.on)return;
+  for(let k=0;k<TOUR.order.length;k++){if(!TOUR.on)return;
+    const it=items.find(i=>i.id===TOUR.order[k]);if(!it)continue;
+    l.textContent=`Tour ${k+1}/${TOUR.order.length} · ${it.name}`;
+    const arrived=tmoved();go(it.id);await arrived;if(!TOUR.on)return;
+    await tidle(3500);if(!TOUR.on)return;
+    setT(0);await tsleep(700);if(!TOUR.on)return;                        // passes from first to last
+    map.easeTo({bearing:map.getBearing()+(k%2?-38:38),duration:650*(DATES.length-1)+1200,easing:t=>t,essential:true});
+    for(let i=1;i<DATES.length;i++){await tsleep(650);if(!TOUR.on)return;setT(i)}
+    await tsleep(1300);
+  }
+  if(!TOUR.on)return;l.textContent='Tour finished';go('');await tsleep(2500);TOUR.on=false;applyMarkers('');tourUI()}
+document.getElementById('tourBtn').onclick=()=>TOUR.on?stopTour():runTour();
+map.on('move',placeTourLabel);   // camera circles around site — bottom edge of parcel on screen changes
+// any user action stops the tour
+['pointerdown','wheel','touchstart'].forEach(ev=>map.getCanvasContainer().addEventListener(ev,stopTour,{passive:true}));
+document.querySelector('.panel').addEventListener('pointerdown',stopTour);
+document.querySelector('.timeline').addEventListener('pointerdown',stopTour);
+['v3d','v2d'].forEach(id=>document.getElementById(id).addEventListener('click',stopTour));
+
+addEventListener('hashchange',route);
+dataReady.then(()=>{renderStats();listView();paintTimeline()});
+</script>
+</body>
+</html>
