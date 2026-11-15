@@ -97,12 +97,6 @@ button{cursor:pointer}
 .how summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none;min-height:44px;display:flex;align-items:center;justify-content:space-between;color:var(--ink-2)}
 .how summary::-webkit-details-marker{display:none}
 .how p{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 8px}
-.dock{border-top:1px solid var(--line);padding:12px 24px 16px;display:none;gap:10px;background:var(--surface)}
-.dock.show{display:flex}
-.btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:var(--r-md);font-weight:800;font-size:14.5px;text-decoration:none;border:0;transition:transform .12s var(--ease),filter .15s var(--ease)}
-.btn:active{transform:scale(.98)}
-.btn.pri{background:var(--acc);color:#fff}.btn.pri:hover{filter:brightness(1.06)}
-.btn.sec{background:var(--sunk);color:var(--ink);border:1px solid var(--line)}.btn.sec:hover{background:#ECEEF1}
 
 /* ===== map overlays (unified glass controls) ===== */
 .mapwrap{position:relative;min-height:0}
@@ -154,10 +148,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   .head{padding:0 16px}.tagline,.demo-chip{display:none!important}
   .stats{margin:8px 0 0;gap:6px}.stat{padding:5px 8px}.stat b{font-size:16px}.stat span{font-size:10.5px;margin-top:0}
   .search{margin:8px 0 0}.search input{height:40px;font-size:14px}.search svg{top:11px}
-  .panel[data-state="peek"] .search,.panel[data-state="peek"] .dock{display:none}
+  .panel[data-state="peek"] .search{display:none}
   .panel.detail-mode .head{display:none}            /* в карточке ЖК сверху сразу название и статус */
   .scroll{padding:4px 10px 10px}
-  .dock{padding:8px 16px 10px}
   .legend{display:none}
   .seg{top:10px;right:10px;padding:3px}.seg button{height:32px;padding:0 10px;font-size:12px}
   .timeline{left:10px;right:10px;width:auto;transform:none;bottom:calc(var(--sh,124px) + 8px);padding:6px 10px;gap:10px;
@@ -186,9 +179,6 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         <input id="q" type="search" placeholder="Complex, street, or district" autocomplete="off"></label>
     </header>
     <div class="scroll" id="view" aria-live="polite"></div>
-    <div class="dock" id="dock">
-      <button class="btn sec" id="share">Share</button>
-    </div>
   </aside>
   <main class="mapwrap">
     <div id="map" role="region" aria-label="3D Map of Dushanbe"></div>
@@ -553,7 +543,7 @@ document.getElementById('v2d').onclick=()=>{map.easeTo({pitch:0,bearing:0,durati
 function vp(a){document.getElementById('v3d').setAttribute('aria-pressed',a);document.getElementById('v2d').setAttribute('aria-pressed',!a)}
 
 /* ---------- panel ---------- */
-const view=document.getElementById('view'),dock=document.getElementById('dock');
+const view=document.getElementById('view');
 /* мобильный выдвижной лист: peek (минимум) / half / full; на десктопе не используется */
 const panelEl=document.getElementById('panel'),grabEl=document.getElementById('grab');
 const isMobile=()=>matchMedia('(max-width:860px)').matches;
@@ -585,7 +575,7 @@ function spark(vals,on){vals=vals.filter(v=>v!=null);if(vals.length<2)return'';c
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${on?'#2B59C3':'#6B7586'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
 function renderStats(){const on=items.filter(i=>(i.radarOn??i.on)&&!i.done).length,done=items.filter(i=>i.done).length,off=items.length-on-done;
   document.getElementById('stats').innerHTML=`<div class="stat on"><b>${on}</b><span>active</span></div>${done?`<div class="stat"><b>${done}</b><span>completed</span></div>`:''}<div class="stat off"><b>${off}</b><span>paused</span></div><div class="stat"><b>${DATES.length}</b><span>passes</span></div>`}
-function listView(q=''){const ql=q.trim().toLowerCase();dock.classList.remove('show');panelEl.classList.remove('detail-mode');
+function listView(q=''){const ql=q.trim().toLowerCase();panelEl.classList.remove('detail-mode');
   const rows=items.filter(it=>!ql||(it.name+' '+it.addr+' '+it.district).toLowerCase().includes(ql));
   view.innerHTML=`<div class="seclab">Sites on Map</div>
   ${rows.length?`<ul class="list">${rows.map(it=>`<li><button class="row" data-id="${it.id}" aria-label="${it.name}, ${it.label||(it.on?'under construction':'paused')}">
@@ -598,7 +588,6 @@ function listView(q=''){const ql=q.trim().toLowerCase();dock.classList.remove('s
   view.querySelectorAll('.row').forEach(b=>b.onclick=()=>go(b.dataset.id))}
 let chart;
 function detailView(it){const d=it.d,on=it.radarOn??it.on;panelEl.classList.add('detail-mode');   // panel — radar output
-  dock.classList.add('show');
   view.innerHTML=`<div class="detail">
   <button class="back" id="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>All sites</button>
   <div><span class="badge ${on?'on':'off'}"><i></i>${it.label||(on?'Under construction':'Paused')}</span></div>
@@ -616,8 +605,6 @@ function detailView(it){const d=it.d,on=it.radarOn??it.on;panelEl.classList.add(
    <p>The NISAR radar images Earth every 12 days through clouds and darkness. Reinforced concrete reflects radar signals much more strongly than bare ground: as floors rise, backscatter increases. “Activity” reflects surface alteration between passes (via phase coherence). “Ground” tracks vertical displacement via InSAR interferometry. Native pixel resolution is ~20 m; this is automated remote-sensing screening, not a substitute for on-site structural engineering inspection.</p></details>
   </div>`;
   document.getElementById('back').onclick=()=>go('');
-  document.getElementById('share').textContent='Share';
-  document.getElementById('share').onclick=async e=>{try{await navigator.clipboard.writeText(location.href);e.currentTarget.textContent='Link copied'}catch(_){e.currentTarget.textContent='Copy page URL'}};
   if(chart)chart.destroy();
   const col=on?'#2B59C3':'#6B7586';
   const DX=dayX();   // X axis proportional to time: missing pass visible as gap
