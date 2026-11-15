@@ -151,7 +151,9 @@ Around each parcel, an adaptive buffer ring `ring` ($100\text{–}400\text{ m}$)
 
 The normalized backscatter signal is computed in logarithmic decibels:
 
-$$\text{norm\_hh\_db} = 10 \log_{10}\left(\frac{1}{N_{\text{site}}} \sum_{p \in \text{site}} \gamma^0(p)\right) - 10 \log_{10}\left(\operatorname{median}_{q \in \text{ring}} \gamma^0(q)\right)$$
+```math
+\text{norm\_hh\_db} = 10 \log_{10}\left(\frac{1}{N_{\text{site}}} \sum_{p \in \text{site}} \gamma^0(p)\right) - 10 \log_{10}\left(\operatorname{median}_{q \in \text{ring}} \gamma^0(q)\right)
+```
 
 This differential subtraction completely cancels out soil moisture changes, rainfall events, seasonal vegetation effects, and inter-pass radiometric calibration drift.
 
