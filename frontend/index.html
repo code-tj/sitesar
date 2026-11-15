@@ -147,23 +147,42 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 /* ===== responsive ===== */
 @media (max-width:1100px){.timeline{width:calc(100% - 32px);left:16px;transform:none;bottom:70px}}
+.grab{display:none}
+/* мобильная версия: карта на весь экран, панель — выдвижной лист (peek / half / full) */
 @media (max-width:860px){
-  .app{grid-template-columns:1fr;grid-template-rows:52vh 1fr}
-  .mapwrap{order:-1}
-  .panel{border-right:0;border-radius:22px 22px 0 0;margin-top:-20px;box-shadow:0 -8px 28px rgba(11,18,32,.10)}
-  .panel:before{content:"";width:40px;height:4px;border-radius:2px;background:var(--line);margin:10px auto 0;display:block}
-  .head{padding:12px 18px 0}.tagline{display:none}
+  .app{display:block}
+  .mapwrap{position:fixed;inset:0}
+  .panel{position:fixed;left:0;right:0;bottom:0;height:var(--sh,124px);border-right:0;border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 28px rgba(11,18,32,.16);transition:height .25s var(--ease);z-index:6;padding-bottom:env(safe-area-inset-bottom);overflow:hidden}
+  .panel.dragging{transition:none}
+  .grab{display:flex;justify-content:center;align-items:center;height:26px;flex:0 0 auto;cursor:grab;touch-action:none}
+  .grab span{width:40px;height:4px;border-radius:2px;background:#D0D5DD}
+  .head{padding:0 16px}.tagline,.demo-chip{display:none!important}
+  .logo{width:30px;height:30px;border-radius:9px}.word b{font-size:15px}.word span{font-size:11.5px;margin-top:2px}
+  .stats{margin:8px 0 0;gap:6px}.stat{padding:5px 8px}.stat b{font-size:16px}.stat span{font-size:10.5px;margin-top:0}
+  .search{margin:8px 0 0}.search input{height:40px;font-size:14px}.search svg{top:11px}
+  .panel[data-state="peek"] .search,.panel[data-state="peek"] .foot,.panel[data-state="peek"] .dock{display:none}
+  .panel.detail-mode .head{display:none}            /* в карточке ЖК сверху сразу название и статус */
+  .scroll{padding:4px 10px 10px}
+  .foot{padding:6px 16px 10px}
+  .dock{padding:8px 16px 10px}
   .legend{display:none}
-  .timeline{bottom:30px;padding:8px 10px;gap:10px}.tl .lab,.passes{display:none}.play{width:40px;height:40px}.tl .date{font-size:15px}
+  .seg{top:10px;right:10px;padding:3px}.seg button{height:32px;padding:0 10px;font-size:12px}
+  .timeline{left:10px;right:10px;width:auto;transform:none;bottom:calc(var(--sh,124px) + 8px);padding:6px 10px;gap:10px;
+    border-radius:12px;transition:bottom .25s var(--ease)}
+  .panel.dragging ~ .mapwrap .timeline{transition:none}
+  .passes{display:none}.play{width:34px;height:34px}.tl .date{font-size:14px}
+  .tl .lab{display:none}.tl .lab.tour{display:block;font-size:11px;letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw}
+  input[type=range]{height:20px}
   .maplibregl-ctrl-bottom-right{display:none}
-  .dock{padding:10px 18px 14px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="panel" aria-label="Sites">
+  <aside class="panel" id="panel" aria-label="Sites" data-state="peek">
+    <div class="grab" id="grab" role="button" tabindex="0" aria-label="Expand or collapse the panel"><span></span></div>
     <header class="head">
       <div class="brandrow">
         <a class="brand" href="#" onclick="go('');return false;" aria-label="Apex Tajikistan — Home">
@@ -534,7 +553,7 @@ function placeTourLabel(){if(typeof TOUR==='undefined'||!TOUR.on)return;
 function clearZone(ring,m){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;ring.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});const dy=m/111320,dx=m/(111320*Math.cos(y0*Math.PI/180));return[[[x0-dx,y0-dy],[x1+dx,y0-dy],[x1+dx,y1+dy],[x0-dx,y1+dy],[x0-dx,y0-dy]]]}
 function centroid(r){let x=0,y=0;const n=r.length-1;for(let i=0;i<n;i++){x+=r[i][0];y+=r[i][1]}return[x/n,y/n]}
 function fitAll(anim=true){const b=new maplibregl.LngLatBounds();items.forEach(it=>it.f.geometry.coordinates[0].forEach(c=>b.extend(c)));
-  map.fitBounds(b,{padding:{top:90,bottom:140,left:60,right:60},pitch:map.getPitch(),bearing:-24,duration:anim?900:0,maxZoom:15.2})}
+  map.fitBounds(b,{padding:mapPad(),pitch:map.getPitch(),bearing:-24,duration:anim?900:0,maxZoom:15.2})}
 function setT(i){T=i;document.getElementById('rng').value=i;document.getElementById('dt').innerHTML=DATES[i]+'<em>.'+yr(i)+'</em>';paintTimeline();
   
   if(chart){chart.data.datasets[0].pointRadius=DATES.map((_,k)=>k===i?6:0);chart.update('none')}}
@@ -549,6 +568,30 @@ function vp(a){document.getElementById('v3d').setAttribute('aria-pressed',a);doc
 
 /* ---------- panel ---------- */
 const view=document.getElementById('view'),dock=document.getElementById('dock');
+/* мобильный выдвижной лист: peek (минимум) / half / full; на десктопе не используется */
+const panelEl=document.getElementById('panel'),grabEl=document.getElementById('grab');
+const isMobile=()=>matchMedia('(max-width:860px)').matches;
+const SNAP={peek:()=>124,half:()=>Math.round(innerHeight*.5),full:()=>innerHeight-56};
+let sheetState='peek';
+function setSheet(st){sheetState=st;panelEl.dataset.state=st;
+  if(!isMobile()){document.documentElement.style.removeProperty('--sh');return}
+  document.documentElement.style.setProperty('--sh',SNAP[st]()+'px')}
+const nextSheet=()=>setSheet(sheetState==='peek'?'half':sheetState==='half'?'full':'peek');
+(function dragSheet(){let y0=0,h0=0,moved=false,on=false;
+  grabEl.addEventListener('pointerdown',e=>{if(!isMobile())return;on=true;moved=false;y0=e.clientY;h0=panelEl.getBoundingClientRect().height;
+    panelEl.classList.add('dragging');grabEl.setPointerCapture(e.pointerId)});
+  grabEl.addEventListener('pointermove',e=>{if(!on)return;const dy=y0-e.clientY;if(Math.abs(dy)>4)moved=true;
+    document.documentElement.style.setProperty('--sh',Math.max(100,Math.min(innerHeight-40,h0+dy))+'px')});
+  grabEl.addEventListener('pointerup',()=>{if(!on)return;on=false;panelEl.classList.remove('dragging');
+    if(!moved){nextSheet();return}
+    const h=panelEl.getBoundingClientRect().height;let best='peek',bd=1e9;
+    for(const k in SNAP){const d=Math.abs(SNAP[k]()-h);if(d<bd){bd=d;best=k}}setSheet(best)});
+  grabEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nextSheet()}});
+})();
+addEventListener('resize',()=>setSheet(sheetState));
+// отступы камеры: на телефоне снизу — высота листа и шкалы дат, чтобы объект не прятался под панелью
+function mapPad(){return isMobile()?{top:56,left:20,right:20,bottom:SNAP[sheetState]()+70}:{top:90,bottom:140,left:60,right:60}}
+setSheet('peek');
 const ICON_ON='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V4M3 4h17M7 4l-3 3M16 4v4M14 8h4v3h-4zM3 21h9M12 21v-6h7v6"/></svg>';
 const ICON_OFF='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
 function spark(vals,on){vals=vals.filter(v=>v!=null);if(vals.length<2)return'';const w=64,h=28,mn=Math.min(...vals),mx=Math.max(...vals),rg=(mx-mn)||1;
@@ -556,7 +599,7 @@ function spark(vals,on){vals=vals.filter(v=>v!=null);if(vals.length<2)return'';c
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${on?'#2B59C3':'#6B7586'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
 function renderStats(){const on=items.filter(i=>(i.radarOn??i.on)&&!i.done).length,done=items.filter(i=>i.done).length,off=items.length-on-done;
   document.getElementById('stats').innerHTML=`<div class="stat on"><b>${on}</b><span>active</span></div>${done?`<div class="stat"><b>${done}</b><span>completed</span></div>`:''}<div class="stat off"><b>${off}</b><span>paused</span></div><div class="stat"><b>${DATES.length}</b><span>passes</span></div>`}
-function listView(q=''){const ql=q.trim().toLowerCase();dock.classList.remove('show');
+function listView(q=''){const ql=q.trim().toLowerCase();dock.classList.remove('show');panelEl.classList.remove('detail-mode');
   const rows=items.filter(it=>!ql||(it.name+' '+it.addr+' '+it.district).toLowerCase().includes(ql));
   view.innerHTML=`<div class="seclab">Sites on Map</div>
   ${rows.length?`<ul class="list">${rows.map(it=>`<li><button class="row" data-id="${it.id}" aria-label="${it.name}, ${it.label||(it.on?'under construction':'paused')}">
@@ -568,7 +611,7 @@ function listView(q=''){const ql=q.trim().toLowerCase();dock.classList.remove('s
   <div class="hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="#1F449C" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>Press ▶ on the map to watch buildings rise across satellite passes.</div>`;
   view.querySelectorAll('.row').forEach(b=>b.onclick=()=>go(b.dataset.id))}
 let chart;
-function detailView(it){const d=it.d,on=it.radarOn??it.on;   // panel — radar output
+function detailView(it){const d=it.d,on=it.radarOn??it.on;panelEl.classList.add('detail-mode');   // panel — radar output
   dock.classList.add('show');
   view.innerHTML=`<div class="detail">
   <button class="back" id="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>All sites</button>
@@ -605,14 +648,15 @@ function paintTimeline(){const r=document.getElementById('rng');r.style.setPrope
 function go(id){location.hash=id||''}
 function route(){const id=location.hash.slice(1),it=items.find(i=>i.id===id);
   applyMarkers(id);
-  if(it){detailView(it);const c=centroid(it.f.geometry.coordinates[0]);
+  if(it){detailView(it);if(isMobile())setSheet(TOUR.on?'peek':'half');const c=centroid(it.f.geometry.coordinates[0]);
     if(TOUR.on){const k=TOUR.order.indexOf(id);   // in tour — slow cinematic flyover
       map.flyTo({center:c,zoom:17.1,pitch:66,bearing:[-28,32,-55][k%3],duration:6500,curve:1.25,
-        easing:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,padding:{bottom:140},essential:true})}
-    else map.flyTo({center:c,zoom:17.4,pitch:64,bearing:-30,duration:1200,padding:{bottom:140}})}
-  else{listView(document.getElementById('q').value);if(map.loaded())fitAll()}
+        easing:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,padding:mapPad(),essential:true})}
+    else map.flyTo({center:c,zoom:17.4,pitch:64,bearing:-30,duration:1200,padding:mapPad()})}
+  else{listView(document.getElementById('q').value);if(isMobile()&&sheetState==='full')setSheet('half');if(map.loaded())fitAll()}
   view.scrollTop=0}
 document.getElementById('q').addEventListener('input',e=>{if(location.hash)go('');listView(e.target.value)});
+document.getElementById('q').addEventListener('focus',()=>{if(isMobile()&&sheetState==='peek')setSheet('half')});
 /* ---------- panoramic tour: flyover across all complexes with pass replay ---------- */
 const TOUR={on:false,timers:[],order:[]};
 const tsleep=ms=>new Promise(res=>{TOUR.timers.push(setTimeout(res,ms))});
